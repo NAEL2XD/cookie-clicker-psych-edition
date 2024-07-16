@@ -31,8 +31,11 @@ local gameData = {
 
     -- ACHIEVEMENTS ON A LUA SPRITE??
     achievementsGot = 0,
-    cookieGuy = false,
-    goldenCookieGuy = false,
+}
+
+local achievements = {
+    theCookieGuy = false,
+    goldentheCookieGuy = false,
     mouseBuyer = false,
     mousaHolic = false,
     grandmaCookies = false,
@@ -53,6 +56,7 @@ local ogCM = 0
 local feverMode = false
 local IconPath = 'game/cookie'
 local longStats = ''
+local tCGFix = false
 
 -- Here's the code.
 function onCreatePost()
@@ -108,7 +112,7 @@ function onCreatePost()
     scaleObject("statButton", 0.75, 0.75)
     setObjectCamera("statButton", "camOther")
 
-    makeLuaSprite("achievementButton", "game/achievementButton", -750, 50)
+    makeLuaSprite("achievementButton", "game/achievementButton", -785, 50)
     addLuaSprite('achievementButton')
     scaleObject("achievementButton", 0.75, 0.75)
     setObjectCamera("achievementButton", "camOther")
@@ -127,7 +131,7 @@ function onCreatePost()
     addHaxeLibrary('Application', 'lime.app')
     addHaxeLibrary('Image', 'lime.graphics')
     runHaxeCode([[
-        var Icon:Image=Image.fromFile(Paths.modFolders('images/]] .. IconPath .. [[.png'));
+        var Icon:Image=Image.fromFile(Paths.modFolders('images/]]..IconPath..[[.png'));
         Application.current.window.setIcon(Icon);
     ]])
 end
@@ -153,13 +157,13 @@ function onUpdate() -- Uh oh! Big Coding Time
     if mouseOverlaps('goldenCookie') and mouseClicked('left') and gcCanBeClicked and not (inShop or inExtras) then
         random = math.random(1, 2)
         gameData.goldenCookies = gameData.goldenCookies + 1
-        if gameData.goldenCookies >= 1 and not gameData.goldenCookieGuy then
-            getAchievement('goldenCookieGuy')
+        if gameData.goldenCookies >= 1 and not achievements.goldentheCookieGuy then
+            getAchievement('goldentheCookieGuy')
         end
         if random == 1 then
             ogCM = gameData.clickMulti
             gameData.clickMulti = gameData.clickMulti * math.random(10, 30)
-            if gameData.clickMulti >= 500 and not gameData.goldenCookieFortune then
+            if gameData.clickMulti >= 500 and not achievements.goldenCookieFortune then
                 getAchievement('goldenCookieFortune')
             end
             cookieClicked()
@@ -225,7 +229,7 @@ function onUpdate() -- Uh oh! Big Coding Time
                                     gameData.cookies = gameData.cookies - gameData.mousePrice
                                     gameData.mouseOwn = gameData.mouseOwn + 1
                                     gameData.mousePrice = gameData.mousePrice + string.format("%0f", gameData.mouseOwn)
-                                    if gameData.mouseOwn >= 10 and not gameData.mousaHolic then
+                                    if gameData.mouseOwn >= 10 and not achievements.mousaHolic then
                                         getAchievement('mousaHolic')
                                     end
                                     if gameData.tutorialBeginner then
@@ -246,7 +250,7 @@ function onUpdate() -- Uh oh! Big Coding Time
                                         gameData.grandmaOwn = gameData.grandmaOwn + 1
                                         gameData.grandmaPrice = gameData.grandmaPrice +
                                         string.format("%0f", 3 * gameData.grandmaOwn)
-                                        if gameData.grandmaOwn >= 1 and not gameData.grandmaCookies then
+                                        if gameData.grandmaOwn >= 1 and not achievements.grandmaCookies then
                                             getAchievement('grandmaCookies')
                                         end
                                     end
@@ -266,14 +270,20 @@ function onUpdate() -- Uh oh! Big Coding Time
             if inExtras then
                 extrasTweeninTime(-125, 0.65)
                 inExtras = false
-                if gameData.tutorialBeginner and gameData.shopOpened then
-                    changeTutorialText("Click on the shop.")
+                if gameData.tutorialBeginner then
+                    changeTutorialText("Try to get at least 15 cookies for something to appear.")
+                    if gameData.shopOpened then
+                        changeTutorialText("Click on the shop.")
+                    end
                 end
             else
                 extrasTweeninTime(975, 0.65)
                 inExtras = true
-                if gameData.tutorialBeginner and gameData.shopOpened then
-                    changeTutorialText("You're seriously gonna ignore?")
+                if gameData.tutorialBeginner then
+                    changeTutorialText("That's not how you click the cookie...")
+                    if gameData.shopOpened then
+                        changeTutorialText("You're seriously gonna ignore?")
+                    end
                 end
             end
         end
@@ -318,7 +328,7 @@ function extrasTweeninTime(x, t)
     doTweenX('extras', "extras", x, t, "sineOut")
     doTweenX('stats', "stats", (x - 900), t, "sineOut")
     doTweenX('statButton', "statButton", (x - 950), t, "sineOut")
-    doTweenX('achievementButton', "achievementButton", (x - 650), t, "sineOut")
+    doTweenX('achievementButton', "achievementButton", (x - 665), t, "sineOut")
 end
 
 function shopTweeninTime(x, t)
@@ -466,8 +476,10 @@ function resetGameData()
         minutes = 0,
         hours = 0,
         achievementsGot = 0,
-        cookieGuy = false,
-        goldenCookieGuy = false,
+    }
+    local da = {
+        theCookieGuy = false,
+        goldentheCookieGuy = false,
         mouseBuyer = false,
         mousaHolic = false,
         grandmaCookies = false,
@@ -476,23 +488,35 @@ function resetGameData()
         goldenCookieFortune = false,
     }
     for k, v in pairs(dgd) do
-        setDataFromSave('CCNael2xdVer', k, v)
+        setDataFromSave('CCNael2xdVerGD', k, v)
     end
-    flushSaveData('CCNael2xdVer')
+    flushSaveData('CCNael2xdVerGD')
+    for k, v in pairs(da) do
+        setDataFromSave('CCNael2xdVerAC', k, v)
+    end
+    flushSaveData('CCNael2xdVerAC')
 end
 
 function loadGameData()
-    initSaveData('CCNael2xdVer')
+    initSaveData('CCNael2xdVerGD')
     for k, v in pairs(gameData) do
-        gameData[k] = getDataFromSave('CCNael2xdVer', k, v)
+        gameData[k] = getDataFromSave('CCNael2xdVerGD', k, v)
+    end
+    initSaveData('CCNael2xdVerAC')
+    for k, v in pairs(achievements) do
+        achievements[k] = getDataFromSave('CCNael2xdVerAC', k, v)
     end
 end
 
 function saveGameData()
     for k, v in pairs(gameData) do
-        setDataFromSave('CCNael2xdVer', k, v)
+        setDataFromSave('CCNael2xdVerGD', k, v)
     end
-    flushSaveData('CCNael2xdVer')
+    flushSaveData('CCNael2xdVerGD')
+    for k, v in pairs(achievements) do
+        setDataFromSave('CCNael2xdVerAC', k, v)
+    end
+    flushSaveData('CCNael2xdVerAC')
     playSound("success")
 end
 
@@ -513,36 +537,36 @@ function getAchievement(achName)
     setObjectCamera("achievementTHING", "camOther")
 
     -- Lists of achievements
-    if achName == 'cookieGuy' then
-        gameData.cookieGuy = true
+    if achName == 'theCookieGuy' then
+        achievements.theCookieGuy = true
         achName = 'Cookie Guy'
     end
-    if achName == 'goldenCookieGuy' then
-        gameData.goldenCookieGuy = true
+    if achName == 'goldentheCookieGuy' then
+        achievements.goldentheCookieGuy = true
         achName = 'Golden Cookie Guy I'
     end
     if achName == 'goldenCookieFortune' then
-        gameData.goldenCookieFortune = true
+        achievements.goldenCookieFortune = true
         achName = 'Golden Cookie Fortune'
     end
     if achName == 'mouseBuyer' then
-        gameData.mouseBuyer = true
+        achievements.mouseBuyer = true
         achName = 'Mouse Buyer'
     end
     if achName == 'fastClicker' then
-        gameData.fastClicker = true
+        achievements.fastClicker = true
         achName = 'Fast Clicker'
     end
     if achName == 'mousaHolic' then
-        gameData.mousaHolic = true
+        achievements.mousaHolic = true
         achName = 'Mouse-A Holic'
     end
     if achName == 'grandmaCookies' then
-        gameData.grandmaCookies = true
+        achievements.grandmaCookies = true
         achName = "Grandma's Cookies"
     end
     if achName == 'timeWaster' then
-        gameData.timeWaster = true
+        achievements.timeWaster = true
         achName = 'Time Waster I'
     end
     gameData.achievementsGot = gameData.achievementsGot + 1
@@ -581,10 +605,10 @@ function cookieClicked()
     doTweenAlpha("alpha", "click", 0, 2, "linear")
     tweenStarted = true
     setTextString('click', '+' .. gameData.clickMulti)
-    if gameData.cookiePerSecond >= 100 and not gameData.fastClicker then
+    if gameData.cookiePerSecond >= 100 and not achievements.fastClicker then
         getAchievement('fastClicker')
     end
-    if gameData.cookies >= 100 and not gameData.cookieGuy then
-        getAchievement('cookieGuy')
+    if gameData.cookies >= 100 and not achievements.theCookieGuy then
+        getAchievement('theCookieGuy')
     end
 end
