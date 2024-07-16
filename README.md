@@ -14,7 +14,7 @@ This has some features which i made it on myself, or used some code for it, it c
 - Shop (??/??/??)
 - Achievements (??/??/??)
 - Golden Cookies (??/??/??)
-- Stats (15/07/2024)
+- Stats (15/07/24)
 
 and probably more will be listed
 
