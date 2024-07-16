@@ -122,10 +122,7 @@ function onCreatePost()
     if gameData.shopOpened then
         triggerShop()
         changeShopDescription("")
-        playMusic("game", 0.5, true)
     end
-
-    debugPrint(getProperty("camOther.angle"))
 
     addHaxeLibrary('Application', 'lime.app')
     addHaxeLibrary('Image', 'lime.graphics')
@@ -206,8 +203,6 @@ function onUpdate() -- Uh oh! Big Coding Time
                             changeTutorialText("No, Go back to the shop.")
                             if gameData.clickMulti >= 2 then
                                 changeTutorialText()
-                                playMusic("game", 0, true)
-                                musicFadeIn(3, 0, 0.5)
                                 gameData.tutorialBeginner = false
                             end
                         end
