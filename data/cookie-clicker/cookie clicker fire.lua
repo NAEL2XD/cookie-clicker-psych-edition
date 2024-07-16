@@ -34,8 +34,8 @@ local gameData = {
 }
 
 local achievements = {
-    theCookieGuy = false,
-    goldentheCookieGuy = false,
+    cookieGuy = false,
+    goldencookieGuy = false,
     mouseBuyer = false,
     mousaHolic = false,
     grandmaCookies = false,
@@ -56,7 +56,6 @@ local ogCM = 0
 local feverMode = false
 local IconPath = 'game/cookie'
 local longStats = ''
-local tCGFix = false
 
 -- Here's the code.
 function onCreatePost()
@@ -157,8 +156,8 @@ function onUpdate() -- Uh oh! Big Coding Time
     if mouseOverlaps('goldenCookie') and mouseClicked('left') and gcCanBeClicked and not (inShop or inExtras) then
         random = math.random(1, 2)
         gameData.goldenCookies = gameData.goldenCookies + 1
-        if gameData.goldenCookies >= 1 and not achievements.goldentheCookieGuy then
-            getAchievement('goldentheCookieGuy')
+        if gameData.goldenCookies >= 1 and not achievements.goldencookieGuy then
+            getAchievement('goldencookieGuy')
         end
         if random == 1 then
             ogCM = gameData.clickMulti
@@ -478,8 +477,8 @@ function resetGameData()
         achievementsGot = 0,
     }
     local da = {
-        theCookieGuy = false,
-        goldentheCookieGuy = false,
+        cookieGuy = false,
+        goldencookieGuy = false,
         mouseBuyer = false,
         mousaHolic = false,
         grandmaCookies = false,
@@ -537,12 +536,12 @@ function getAchievement(achName)
     setObjectCamera("achievementTHING", "camOther")
 
     -- Lists of achievements
-    if achName == 'theCookieGuy' then
-        achievements.theCookieGuy = true
+    if achName == 'cookieGuy' then
+        achievements.cookieGuy = true
         achName = 'Cookie Guy'
     end
-    if achName == 'goldentheCookieGuy' then
-        achievements.goldentheCookieGuy = true
+    if achName == 'goldencookieGuy' then
+        achievements.goldencookieGuy = true
         achName = 'Golden Cookie Guy I'
     end
     if achName == 'goldenCookieFortune' then
@@ -608,7 +607,7 @@ function cookieClicked()
     if gameData.cookiePerSecond >= 100 and not achievements.fastClicker then
         getAchievement('fastClicker')
     end
-    if gameData.cookies >= 100 and not achievements.theCookieGuy then
-        getAchievement('theCookieGuy')
+    if gameData.cookies >= 100 and not achievements.cookieGuy then
+        getAchievement('cookieGuy')
     end
 end
