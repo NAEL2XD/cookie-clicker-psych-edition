@@ -123,7 +123,7 @@ function onCreatePost()
 
     runTimer("cps", 1, 0)
     runTimer("goldenCookie", math.random(1, 60), 1)
-    if not gameData.timeWaster then
+    if not achievements.timeWaster then
         runTimer("timeWaster", 60, 1)
     end
 
