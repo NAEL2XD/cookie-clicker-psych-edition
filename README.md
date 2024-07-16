@@ -4,6 +4,20 @@ Welcome to my repository where i try to recreate cookie clicker on psych engine 
 
 (i made this for fun)
 
+# What does it contain?
+
+This has some features which i made it on myself, or used some code for it, it contains:
+
+```Template: - Name (DD/MM/YY)``` 
+
+- Clicking ability (??/??/??)
+- Shop (??/??/??)
+- Achievements (??/??/??)
+- Golden Cookies (??/??/??)
+- Stats (15/07/2024)
+
+and probably more will be listed
+
 # Screenshots
 
 ![image](https://github.com/user-attachments/assets/5c338798-0669-472b-9cf5-2967d65f55c5)
