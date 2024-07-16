@@ -35,7 +35,7 @@ local gameData = {
 
 local achievements = {
     cookieGuy = false,
-    goldencookieGuy = false,
+    goldenCookieGuy = false,
     mouseBuyer = false,
     mousaHolic = false,
     grandmaCookies = false,
@@ -156,8 +156,8 @@ function onUpdate() -- Uh oh! Big Coding Time
     if mouseOverlaps('goldenCookie') and mouseClicked('left') and gcCanBeClicked and not (inShop or inExtras) then
         random = math.random(1, 2)
         gameData.goldenCookies = gameData.goldenCookies + 1
-        if gameData.goldenCookies >= 1 and not achievements.goldencookieGuy then
-            getAchievement('goldencookieGuy')
+        if gameData.goldenCookies >= 1 and not achievements.goldenCookieGuy then
+            getAchievement('goldenCookieGuy')
         end
         if random == 1 then
             ogCM = gameData.clickMulti
@@ -478,7 +478,7 @@ function resetGameData()
     }
     local da = {
         cookieGuy = false,
-        goldencookieGuy = false,
+        goldenCookieGuy = false,
         mouseBuyer = false,
         mousaHolic = false,
         grandmaCookies = false,
@@ -540,8 +540,8 @@ function getAchievement(achName)
         achievements.cookieGuy = true
         achName = 'Cookie Guy'
     end
-    if achName == 'goldencookieGuy' then
-        achievements.goldencookieGuy = true
+    if achName == 'goldenCookieGuy' then
+        achievements.goldenCookieGuy = true
         achName = 'Golden Cookie Guy I'
     end
     if achName == 'goldenCookieFortune' then
