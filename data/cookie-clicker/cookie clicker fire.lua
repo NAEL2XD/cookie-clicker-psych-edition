@@ -56,6 +56,11 @@ local ogCM = 0
 local feverMode = false
 local IconPath = 'game/cookie'
 local longStats = ''
+local extrasType = 0
+local achievementPage = 1
+local outputAN = ''
+local outputAP = ''
+local outputTOF = false
 
 -- Here's the code.
 function onCreatePost()
@@ -68,7 +73,7 @@ function onCreatePost()
     makeText('cookietotal', 0, 50, 60)
     makeText('cps', 0, 120, 15)
     makeText('click', 0, 120, 30)
-    makeText('stats', -720, 175, 30)
+    makeText('stats', -720, 150, 40)
 
     if gameData.tutorialBeginner then
         makeText('tutorial', 0, 600, 30)
@@ -106,12 +111,12 @@ function onCreatePost()
     scaleObject("extras", 0.5, 0.5)
     setObjectCamera("extras", "camOther")
 
-    makeLuaSprite("statButton", "game/statButton", -1000, 50)
+    makeLuaSprite("statButton", "game/statButton", -1000, 625)
     addLuaSprite('statButton')
     scaleObject("statButton", 0.75, 0.75)
     setObjectCamera("statButton", "camOther")
 
-    makeLuaSprite("achievementButton", "game/achievementButton", -785, 50)
+    makeLuaSprite("achievementButton", "game/achievementButton", -785, 625)
     addLuaSprite('achievementButton')
     scaleObject("achievementButton", 0.75, 0.75)
     setObjectCamera("achievementButton", "camOther")
@@ -132,7 +137,7 @@ function onCreatePost()
     runHaxeCode([[
         var Icon:Image=Image.fromFile(Paths.modFolders('images/]]..IconPath..[[.png'));
         Application.current.window.setIcon(Icon);
-    ]])
+    ]]) -- Haxe code number 1
 end
 
 function onUpdate() -- Uh oh! Big Coding Time
@@ -291,6 +296,48 @@ function onUpdate() -- Uh oh! Big Coding Time
             extrasTweeninTime(-125, 0.65)
         end
     end
+    if inExtras then
+        if mouseOverlaps('statButton') and mouseClicked("left") then
+            removeLuaText("achNameP")
+            removeLuaText("achDescP")
+            removeLuaText("achISunP")
+            removeLuaText("achUnloP")
+            removeLuaText("achPageP")
+            makeText('stats', 75, 150, 40)
+            extrasType = 1
+        else
+            if mouseOverlaps('achievementButton') and mouseClicked("left") then
+                removeLuaText("stats")
+                makeText('achNameP', 75, 150, 40)
+                makeText('achDescP', 75, 200, 40)
+                makeText('achISunP', 75, 300, 40)
+                setTextString("achISunP", 'Unlocked: ')
+                makeText('achUnloP', 300, 300, 40)
+                makeText('achPageP', 75, 350, 40)
+                extrasType = 2
+            end
+        end
+    end
+    if inExtras and extrasType == 2 then
+        getListOfAchievements(achievementPage)
+        setTextString("achNameP", outputAN)
+        setTextString("achDescP", outputAP)
+        setTextString("achUnloP", outputTOF)
+        setTextString("achPageP", achievementPage..' / 8')
+        if getPropertyFromClass("flixel.FlxG", "keys.justPressed.LEFT") then
+            achievementPage = achievementPage - 1
+            if achievementPage == 0 then
+                achievementPage = 1
+            end
+        else
+            if getPropertyFromClass("flixel.FlxG", "keys.justPressed.RIGHT") then
+                achievementPage = achievementPage + 1
+                if achievementPage == 9 then
+                    achievementPage = 8
+                end
+            end
+        end
+    end
     if gameData.cookies >= 15 and gameData.shopOpened == false then
         gameData.shopOpened = true
         triggerShop()
@@ -305,7 +352,7 @@ function mouseOverlaps(tag) -- https://github.com/ShadowMario/FNF-PsychEngine/is
         if (obj == null) obj = Reflect.getProperty(game, ']] .. tag .. [[');
         if (obj == null) return false;
         return obj.getScreenBounds(null, obj.cameras[0]).containsPoint(FlxG.mouse.getScreenPosition(obj.cameras[0]));
-    ]])
+    ]]) -- Haxe code number 2
 end
 
 function makeText(name, x, y, size)
@@ -314,7 +361,7 @@ function makeText(name, x, y, size)
     setTextAlignment(name, 'CENTER')
     addLuaText(name)
     setObjectCamera(name, 'camOther')
-    if name == 'mouseP' or name == 'grandmaP' or name == 'stats' then
+    if name == 'mouseP' or name == 'grandmaP' or name == 'stats' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
         setTextAlignment(name, 'LEFT')
     end
     if name == ('achTitle' or 'achDesc') then
@@ -325,7 +372,15 @@ end
 function extrasTweeninTime(x, t)
     doTweenX('extrabg', "extrabg", (x - 1217.5), t, "sineOut")
     doTweenX('extras', "extras", x, t, "sineOut")
-    doTweenX('stats', "stats", (x - 900), t, "sineOut")
+    if luaTextExists("stats") then
+        doTweenX('stats', "stats", (x - 900), t, "sineOut")
+    else
+        doTweenX('achNameP', "achNameP", (x - 900), t, "sineOut")
+        doTweenX('achDescP', "achDescP", (x - 900), t, "sineOut")
+        doTweenX('achISunP', "achISunP", (x - 900), t, "sineOut")
+        doTweenX('achUnloP', "achUnloP", (x - 675), t, "sineOut")
+        doTweenX('achPageP', "achPageP", (x - 900), t, "sineOut")
+    end
     doTweenX('statButton', "statButton", (x - 950), t, "sineOut")
     doTweenX('achievementButton', "achievementButton", (x - 665), t, "sineOut")
 end
@@ -446,13 +501,15 @@ function triggerShop()
 end
 
 function updateThings()
-    longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/8'
+    if luaTextExists("stats") then
+        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/8'
+        setTextString('stats', longStats)
+    end
     setPropertyFromClass('lime.app.Application', 'current.window.title', "Cookie Clicker PSYCH EDITION")
     setTextString("cookietotal", gameData.cookies)
     setTextString("cps", gameData.cookiePerSecond .. " CPS\n" .. gameData.maxCPS .. " max CPS")
     setTextString('mouseP', gameData.mousePrice)
     setTextString('grandmaP', gameData.grandmaPrice)
-    setTextString('stats', longStats)
 end
 
 function resetGameData()
@@ -610,4 +667,80 @@ function cookieClicked()
     if gameData.cookies >= 100 and not achievements.cookieGuy then
         getAchievement('cookieGuy')
     end
+end
+
+function getListOfAchievements(n)
+    if n == 1 then
+        n = 'Cookie Guy'
+        outputAP = 'Get 100 cookies.'
+        if achievements.cookieGuy then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 2 then
+        n = 'Golden Cookie Guy I'
+        outputAP = 'Click the Golden Cookie.'
+        if achievements.goldenCookieGuy then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 3 then
+        n = 'Golden Cookie Fortune'
+        outputAP = 'Get 500 cookies from a Golden Cookie.'
+        if achievements.goldenCookieFortune then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 4 then
+        n = 'Mouse Buyer'
+        outputAP = 'Buy your first mouse.'
+        if achievements.mouseBuyer then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 5 then
+        n = 'Fast Clicker'
+        outputAP = 'Get 100 CPS.'
+        if achievements.fastClicker then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 6 then
+        n = 'Mouse-A Holic'
+        outputAP = 'Buy 10 mouses.'
+        if achievements.mousaHolic then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 7 then
+        n = "Grandma's Cookies"
+        outputAP = 'Buy your first grandma.'
+        if achievements.grandmaCookies then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    if n == 8 then
+        n = 'Time Waster I'
+        outputAP = 'Play for 1 minute.'
+        if achievements.timeWaster then
+            outputTOF = true
+        else
+            outputTOF = false
+        end
+    end
+    outputAN = n
 end
