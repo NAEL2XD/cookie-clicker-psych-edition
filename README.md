@@ -15,6 +15,7 @@ This has some features which i made it on myself, or used some code for it, it c
 - Achievements (??/??/??)
 - Golden Cookies (??/??/??)
 - Stats (15/07/24)
+- Upgrades (18/07/2024)
 
 and probably more will be listed
 
