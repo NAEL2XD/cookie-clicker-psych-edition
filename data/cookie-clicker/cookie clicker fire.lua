@@ -20,6 +20,8 @@ local gameData = {
     mouseOwn = 0,
     grandmaPrice = 50,
     grandmaOwn = 0,
+    farmPrice = 500,
+    farmOwn = 0,
 
     -- Tutorial Stuff
     tutorialBeginner = true,
@@ -39,12 +41,13 @@ local achievements = {
     cookieFashionist = false,
     goldenCookieGuy = false,
     goldenCookieFortune = false,
-    mouseBuyer = false,
-    mousaHolic = false,
-    grandmaCookies = false,
     fastClicker = false,
     timeWaster = false,
     timeMan = false,
+    mouseBuyer = false,
+    mousaHolic = false,
+    grandmaCookies = false,
+    boughtFarm = false,
 }
 
 local achievementPage = 1
@@ -117,7 +120,7 @@ function onCreatePost()
     setObjectCamera("achievementButton", "camOther")
 
     runTimer("cps", 1, 0)
-    runTimer("goldenCookie", math.random(1, 60), 1)
+    runTimer("goldenCookie", math.random(30, 120), 0)
 
     if gameData.shopOpened then
         triggerShop()
@@ -168,7 +171,6 @@ function onUpdate() -- Uh oh! Big Coding Time
             cancelTimer("gctime")
             cancelTween("gcbye")
             removeLuaSprite("goldenCookie")
-            runTimer("goldenCookie", math.random(30, 120), 1)
         else
             if random == 2 then
                 feverMode = true
@@ -177,7 +179,6 @@ function onUpdate() -- Uh oh! Big Coding Time
                 cancelTimer("gctime")
                 cancelTween("gcbye")
                 removeLuaSprite("goldenCookie")
-                runTimer("goldenCookie", math.random(30, 120), 1)
                 runTimer("gcFEVER", 10, 1)
             end
         end
@@ -236,19 +237,31 @@ function onUpdate() -- Uh oh! Big Coding Time
                                     end
                                 end
                             end
-                        else
-                            if mouseOverlaps('grandma') then
-                                changeShopDescription("Grandma - When purchased, grandma will bake 1 cookie per second.")
-                                if mouseClicked('left') then
-                                    if gameData.cookies + 1 >= gameData.grandmaPrice then
-                                        playSound("purchase")
-                                        gameData.cookies = gameData.cookies - gameData.grandmaPrice
-                                        gameData.grandmaOwn = gameData.grandmaOwn + 1
-                                        gameData.grandmaPrice = gameData.grandmaPrice +
-                                        string.format("%0f", 3 * gameData.grandmaOwn)
-                                        if gameData.grandmaOwn >= 1 and not achievements.grandmaCookies then
-                                            getAchievement('grandmaCookies')
-                                        end
+                        end
+                        if mouseOverlaps('grandma') then
+                            changeShopDescription("Grandma - When purchased, grandma will bake 3 cookies per second.")
+                            if mouseClicked('left') then
+                                if gameData.cookies + 1 >= gameData.grandmaPrice then
+                                    playSound("purchase")
+                                    gameData.cookies = gameData.cookies - gameData.grandmaPrice
+                                    gameData.grandmaOwn = gameData.grandmaOwn + 1
+                                    gameData.grandmaPrice = gameData.grandmaPrice + string.format("%0f", 3 * gameData.grandmaOwn)
+                                    if gameData.grandmaOwn >= 1 and not achievements.grandmaCookies then
+                                        getAchievement('grandmaCookies')
+                                    end
+                                end
+                            end
+                        end
+                        if mouseOverlaps('farm') then
+                            changeShopDescription("Farm - When purchased, the farm will grow cookie seeds worth 15 cookies per second.")
+                            if mouseClicked('left') then
+                                if gameData.cookies + 1 >= gameData.farmPrice then
+                                    playSound("purchase")
+                                    gameData.cookies = gameData.cookies - gameData.farmPrice
+                                    gameData.farmOwn = gameData.farmOwn + 1
+                                    gameData.farmPrice = gameData.farmPrice + string.format("%0f", 5 * gameData.farmOwn)
+                                    if gameData.farmOwn >= 1 and not achievements.boughtFarm then
+                                        getAchievement('boughtFarm')
                                     end
                                 end
                             end
@@ -315,16 +328,16 @@ function onUpdate() -- Uh oh! Big Coding Time
         setTextString("achNameP", outputAN)
         setTextString("achDescP", outputAP)
         setTextString("achUnloP", outputTF)
-        setTextString("achPageP", achievementPage..' / 11')
+        setTextString("achPageP", achievementPage..' / 12')
         if getPropertyFromClass("flixel.FlxG", "keys.justPressed.LEFT") then
             achievementPage = achievementPage - 1
             if achievementPage == 0 then
-                achievementPage = 11
+                achievementPage = 12
             end
         else
             if getPropertyFromClass("flixel.FlxG", "keys.justPressed.RIGHT") then
                 achievementPage = achievementPage + 1
-                if achievementPage == 12 then
+                if achievementPage == 13 then
                     achievementPage = 1
                 end
             end
@@ -340,8 +353,8 @@ end
 function mouseOverlaps(tag) -- https://github.com/ShadowMario/FNF-PsychEngine/issues/12755#issuecomment-1641455548
     addHaxeLibrary('Reflect')
     return runHaxeCode([[
-        var obj = game.getLuaObject(']] .. tag .. [[');
-        if (obj == null) obj = Reflect.getProperty(game, ']] .. tag .. [[');
+        var obj = game.getLuaObject(']]..tag..[[');
+        if (obj == null) obj = Reflect.getProperty(game, ']]..tag..[[');
         if (obj == null) return false;
         return obj.getScreenBounds(null, obj.cameras[0]).containsPoint(FlxG.mouse.getScreenPosition(obj.cameras[0]));
     ]]) -- Haxe code number 2
@@ -353,7 +366,7 @@ function makeText(name, x, y, size)
     setTextAlignment(name, 'CENTER')
     addLuaText(name)
     setObjectCamera(name, 'camOther')
-    if name == 'mouseP' or name == 'grandmaP' or name == 'stats' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
+    if name == 'mouseP' or name == 'grandmaP' or name =='farmP' or name == 'stats' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
         setTextAlignment(name, 'LEFT')
     end
     if name == ('achTitle' or 'achDesc') then
@@ -382,6 +395,8 @@ function shopTweeninTime(x, t)
     doTweenX('mouseP', "mouseP", (x + 300), t, "sineOut")
     doTweenX('grandma', "grandma", (x + 230), t, "sineOut")
     doTweenX('grandmaP', "grandmaP", (x + 300), t, "sineOut")
+    doTweenX('farm', "farm", (x + 230), t, "sineOut")
+    doTweenX('farmP', "farmP", (x + 300), t, "sineOut")
     doTweenX('shopbg', "shopbg", (x + 92), t, "sineOut")
     doTweenX('shop', "shop", x, t, "sineOut")
 end
@@ -396,7 +411,7 @@ end
 
 function onTimerCompleted(tag)
     if tag == 'cps' then
-        gameData.bCPS = (gameData.grandmaOwn)
+        gameData.bCPS = (gameData.grandmaOwn * 3) + (gameData.farmOwn * 15)
         gameData.cookies = gameData.cookies + gameData.bCPS
         gameData.totalCookies = gameData.totalCookies + gameData.bCPS
         gameData.cookiePerSecond = gameData.bCPS
@@ -447,7 +462,6 @@ function onTweenCompleted(tag)
     end
     if tag == 'gcbye' then
         removeLuaSprite("goldenCookie")
-        runTimer("goldenCookie", math.random(30, 120), 1)
     end
 end
 
@@ -462,6 +476,9 @@ function changeShopDescription(name)
     end
     if mouseOverlaps('grandma') then
         setTextString("shopDesc", name .. "\nQuantity Owned: " .. gameData.grandmaOwn)
+    end
+    if mouseOverlaps('farm') then
+        setTextString("shopDesc", name .. "\nQuantity Owned: " .. gameData.farmOwn)
     end
 end
 
@@ -492,12 +509,19 @@ function triggerShop()
     shopTweeninTime('1200', '0.3')
     makeText('grandmaP', 1500, 265, 55)
 
+    makeLuaSprite("farm", "game/products/farm", 1530, 355)
+    addLuaSprite('farm')
+    scaleObject("farm", 0.625, 0.625)
+    setObjectCamera("farm", "camOther")
+    shopTweeninTime('1200', '0.3')
+    makeText('farmP', 1500, 360, 55)
+
     makeText('shopDesc', 0, 10, 20)
 end
 
 function updateThings()
     if luaTextExists("stats") then
-        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/11'
+        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/12'
         setTextString('stats', longStats)
     end
     setPropertyFromClass('lime.app.Application', 'current.window.title', "Cookie Clicker PSYCH EDITION")
@@ -505,6 +529,7 @@ function updateThings()
     setTextString("cps", gameData.cookiePerSecond .. " CPS\n" .. gameData.maxCPS .. " max CPS")
     setTextString('mouseP', gameData.mousePrice)
     setTextString('grandmaP', gameData.grandmaPrice)
+    setTextString('farmP', gameData.farmPrice)
 end
 
 function resetGameData()
@@ -522,6 +547,8 @@ function resetGameData()
         mouseOwn = 0,
         grandmaPrice = 50,
         grandmaOwn = 0,
+        farmPrice = 500,
+        farmOwn = 0,
         tutorialBeginner = true,
         seconds = 0,
         minutes = 0,
@@ -533,12 +560,14 @@ function resetGameData()
         cookieMaker = false,
         cookieFashionist = false,
         goldenCookieGuy = false,
+        goldenCookieFortune = false,
+        fastClicker = false,
+        timeWaster = false,
+        timeMan = false,
         mouseBuyer = false,
         mousaHolic = false,
         grandmaCookies = false,
-        fastClicker = false,
-        timeWaster = false,
-        goldenCookieFortune = false,
+        boughtFarm = false,
     }
     for k, v in pairs(dgd) do
         setDataFromSave('CCNael2xdVerGD', k, v)
@@ -610,13 +639,21 @@ function getAchievement(achName)
         achievements.goldenCookieFortune = true
         achName = 'Golden Cookie Fortune'
     end
-    if achName == 'mouseBuyer' then
-        achievements.mouseBuyer = true
-        achName = 'Mouse Buyer'
-    end
     if achName == 'fastClicker' then
         achievements.fastClicker = true
         achName = 'Fast Clicker'
+    end
+    if achName == 'timeWaster' then
+        achievements.timeWaster = true
+        achName = 'Time Waster I'
+    end
+    if achName == 'timeMan' then
+        achievements.timeMan = true
+        achName = 'Time Waster II'
+    end
+    if achName == 'mouseBuyer' then
+        achievements.mouseBuyer = true
+        achName = 'Mouse Buyer'
     end
     if achName == 'mousaHolic' then
         achievements.mousaHolic = true
@@ -626,13 +663,9 @@ function getAchievement(achName)
         achievements.grandmaCookies = true
         achName = "Grandma's Cookies"
     end
-    if achName == 'timeWaster' then
-        achievements.timeWaster = true
-        achName = 'Time Waster I'
-    end
-    if achName == 'timeMan' then
-        achievements.timeMan = true
-        achName = 'Time Waster II'
+    if achName == 'boughtFarm' then
+        achievements.boughtFarm = true
+        achName = 'Bought the farm'
     end
     gameData.achievementsGot = gameData.achievementsGot + 1
     playSound("achievement unlocked")
@@ -731,15 +764,6 @@ function getListOfAchievements(n)
         end
     end
     if n == 6 then
-        n = 'Mouse Buyer'
-        outputAP = 'Buy your first mouse.'
-        if achievements.mouseBuyer then
-            outputTF = true
-        else
-            outputTF = false
-        end
-    end
-    if n == 7 then
         n = 'Fast Clicker'
         outputAP = 'Get 100 CPS.'
         if achievements.fastClicker then
@@ -748,25 +772,7 @@ function getListOfAchievements(n)
             outputTF = false
         end
     end
-    if n == 8 then
-        n = 'Mouse-A Holic'
-        outputAP = 'Buy 10 mouses.'
-        if achievements.mousaHolic then
-            outputTF = true
-        else
-            outputTF = false
-        end
-    end
-    if n == 9 then
-        n = "Grandma's Cookies"
-        outputAP = 'Buy your first grandma.'
-        if achievements.grandmaCookies then
-            outputTF = true
-        else
-            outputTF = false
-        end
-    end
-    if n == 10 then
+    if n == 7 then
         n = 'Time Waster I'
         outputAP = 'Play for 1 minute.'
         if achievements.timeWaster then
@@ -775,10 +781,46 @@ function getListOfAchievements(n)
             outputTF = false
         end
     end
-    if n == 11 then
+    if n == 8 then
         n = 'Time Waster II'
         outputAP = 'Play for 10 minutes.'
         if achievements.timeMan then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 9 then
+        n = 'Mouse Buyer'
+        outputAP = 'Buy your first mouse.'
+        if achievements.mouseBuyer then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 10 then
+        n = 'Mouse-A Holic'
+        outputAP = 'Buy 10 mouses.'
+        if achievements.mousaHolic then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 11 then
+        n = "Grandma's Cookies"
+        outputAP = 'Buy your first grandma.'
+        if achievements.grandmaCookies then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 12 then
+        n = "Bought the farm"
+        outputAP = 'Buy your first farm.'
+        if achievements.boughtFarm then
             outputTF = true
         else
             outputTF = false
