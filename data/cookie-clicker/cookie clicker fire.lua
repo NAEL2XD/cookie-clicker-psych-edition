@@ -60,7 +60,6 @@ local inShop = false
 local outputTF = false
 local shopPulled = false
 local tweenStarted = false
-local IconPath = 'game/cookie'
 local longStats = ''
 local outputAN = ''
 local outputAP = ''
@@ -128,7 +127,7 @@ function onCreatePost()
     addHaxeLibrary('Application', 'lime.app')
     addHaxeLibrary('Image', 'lime.graphics')
     runHaxeCode([[
-        var Icon:Image=Image.fromFile(Paths.modFolders('images/]]..IconPath..[[.png'));
+        var Icon:Image=Image.fromFile(Paths.modFolders('images/game/cookie.png'));
         Application.current.window.setIcon(Icon);
     ]]) -- Haxe code number 1
 end
