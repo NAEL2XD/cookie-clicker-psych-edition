@@ -393,7 +393,7 @@ function makeText(name, x, y, size)
     setTextAlignment(name, 'CENTER')
     addLuaText(name)
     setObjectCamera(name, 'camOther')
-    if name == 'mouseP' or name == 'grandmaP' or name =='farmP' or name == 'doubleCursorP' or name == 'stats' or name == 'stats2' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
+    if name == 'mouseP' or name == 'grandmaP' or name =='farmP' or name == 'doubleCursorP' or name == 'stats' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
         setTextAlignment(name, 'LEFT')
     end
     if name == ('achTitle' or 'achDesc') then
