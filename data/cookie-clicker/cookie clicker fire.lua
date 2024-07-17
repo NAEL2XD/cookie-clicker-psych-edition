@@ -35,32 +35,35 @@ local gameData = {
 
 local achievements = {
     cookieGuy = false,
+    cookieMaker = false,
+    cookieFashionist = false,
     goldenCookieGuy = false,
+    goldenCookieFortune = false,
     mouseBuyer = false,
     mousaHolic = false,
     grandmaCookies = false,
     fastClicker = false,
     timeWaster = false,
-    goldenCookieFortune = false,
+    timeMan = false,
 }
 
-local random = 0
-local gcCanBeClicked = false
-local tweenStarted = false
+local achievementPage = 1
+local extrasType = 0
 local mouseX = 0
 local mouseY = 0
-local shopPulled = false
-local inShop = false
-local inExtras = false
 local ogCM = 0
+local random = 0
+local gcCanBeClicked = false
 local feverMode = false
+local inExtras = false
+local inShop = false
+local outputTF = false
+local shopPulled = false
+local tweenStarted = false
 local IconPath = 'game/cookie'
 local longStats = ''
-local extrasType = 0
-local achievementPage = 1
 local outputAN = ''
 local outputAP = ''
-local outputTOF = false
 
 -- Here's the code.
 function onCreatePost()
@@ -80,11 +83,6 @@ function onCreatePost()
         changeTutorialText("Try to get at least 15 cookies for something to appear.")
     end
 
-    makeLuaSprite("black", "game/black")
-    addLuaSprite('black')
-    screenCenter("black")
-    setObjectCamera("black", "camOther")
-
     makeLuaSprite("cookie", "game/cookie")
     addLuaSprite('cookie')
     scaleObject("cookie", 0.2, 0.2)
@@ -94,11 +92,9 @@ function onCreatePost()
     if not botPlay then
         setProperty('cpuControlled', true)
     end
-    setProperty("scoreTxt.visible", false)
-    setProperty("botplayTxt.visible", false)
-    setProperty("click.visible", false)
-    setProperty("black.alpha", 0.85)
-    setProperty("camHUD.visible", false)
+    setProperty("click.alpha", 0)
+    setProperty("camHUD.alpha", 0)
+    setProperty("camGame.alpha", 0.15)
 
     makeLuaSprite("extrabg", "game/shopbg", -1342.5, 0)
     addLuaSprite('extrabg')
@@ -123,9 +119,6 @@ function onCreatePost()
 
     runTimer("cps", 1, 0)
     runTimer("goldenCookie", math.random(1, 60), 1)
-    if not achievements.timeWaster then
-        runTimer("timeWaster", 60, 1)
-    end
 
     if gameData.shopOpened then
         triggerShop()
@@ -322,18 +315,18 @@ function onUpdate() -- Uh oh! Big Coding Time
         getListOfAchievements(achievementPage)
         setTextString("achNameP", outputAN)
         setTextString("achDescP", outputAP)
-        setTextString("achUnloP", outputTOF)
-        setTextString("achPageP", achievementPage..' / 8')
+        setTextString("achUnloP", outputTF)
+        setTextString("achPageP", achievementPage..' / 11')
         if getPropertyFromClass("flixel.FlxG", "keys.justPressed.LEFT") then
             achievementPage = achievementPage - 1
             if achievementPage == 0 then
-                achievementPage = 1
+                achievementPage = 11
             end
         else
             if getPropertyFromClass("flixel.FlxG", "keys.justPressed.RIGHT") then
                 achievementPage = achievementPage + 1
-                if achievementPage == 9 then
-                    achievementPage = 8
+                if achievementPage == 12 then
+                    achievementPage = 1
                 end
             end
         end
@@ -390,7 +383,7 @@ function shopTweeninTime(x, t)
     doTweenX('mouseP', "mouseP", (x + 300), t, "sineOut")
     doTweenX('grandma', "grandma", (x + 230), t, "sineOut")
     doTweenX('grandmaP', "grandmaP", (x + 300), t, "sineOut")
-    doTweenX('shopbg', "shopbg", (x + 100), t, "sineOut")
+    doTweenX('shopbg', "shopbg", (x + 92), t, "sineOut")
     doTweenX('shop', "shop", x, t, "sineOut")
 end
 
@@ -412,6 +405,12 @@ function onTimerCompleted(tag)
         if gameData.seconds == 60 then
             gameData.minutes = gameData.minutes + 1
             gameData.seconds = 0
+            if gameData.minutes == 1 and not achievements.timeWaster then
+                getAchievement('timeWaster')
+            end
+            if gameData.minutes == 10 and not achievements.timeMan then
+                getAchievement('timeMan')
+            end
         end
         if gameData.minutes == 60 then
             gameData.hours = gameData.hours + 1
@@ -428,9 +427,6 @@ function onTimerCompleted(tag)
         removeLuaSprite("achievementTHING")
         removeLuaText("achTitle")
         removeLuaText("achDesc")
-    end
-    if tag == 'timeWaster' then
-        getAchievement(tag)
     end
     if tag == 'goldenCookie' then
         summonGoldenCookie()
@@ -474,7 +470,7 @@ function triggerShop()
     if gameData.tutorialBeginner then
         changeTutorialText("Click on the shop.")
     end
-    makeLuaSprite("shopbg", "game/shopbg", 1600, 0)
+    makeLuaSprite("shopbg", "game/shopbg", 1520, 0)
     addLuaSprite('shopbg')
     scaleObject("shopbg", 2.5, 2)
     setObjectCamera("shopbg", "camOther")
@@ -502,7 +498,7 @@ end
 
 function updateThings()
     if luaTextExists("stats") then
-        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/8'
+        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/11'
         setTextString('stats', longStats)
     end
     setPropertyFromClass('lime.app.Application', 'current.window.title', "Cookie Clicker PSYCH EDITION")
@@ -535,6 +531,8 @@ function resetGameData()
     }
     local da = {
         cookieGuy = false,
+        cookieMaker = false,
+        cookieFashionist = false,
         goldenCookieGuy = false,
         mouseBuyer = false,
         mousaHolic = false,
@@ -597,6 +595,14 @@ function getAchievement(achName)
         achievements.cookieGuy = true
         achName = 'Cookie Guy'
     end
+    if achName == 'cookieMaker' then
+        achievements.cookieMaker = true
+        achName = 'Cookie Maker'
+    end
+    if achName == 'cookieFashionist' then
+        achievements.cookieFashionist = true
+        achName = 'Cookie Fashionist'
+    end
     if achName == 'goldenCookieGuy' then
         achievements.goldenCookieGuy = true
         achName = 'Golden Cookie Guy I'
@@ -624,6 +630,10 @@ function getAchievement(achName)
     if achName == 'timeWaster' then
         achievements.timeWaster = true
         achName = 'Time Waster I'
+    end
+    if achName == 'timeMan' then
+        achievements.timeMan = true
+        achName = 'Time Waster II'
     end
     gameData.achievementsGot = gameData.achievementsGot + 1
     playSound("achievement unlocked")
@@ -667,6 +677,12 @@ function cookieClicked()
     if gameData.cookies >= 100 and not achievements.cookieGuy then
         getAchievement('cookieGuy')
     end
+    if gameData.cookies >= 1000 and not achievements.cookieMaker then
+        getAchievement('cookieMaker')
+    end
+    if gameData.cookies >= 10000 and not achievements.cookieFashionist then
+        getAchievement('cookieFashionist')
+    end
 end
 
 function getListOfAchievements(n)
@@ -674,72 +690,99 @@ function getListOfAchievements(n)
         n = 'Cookie Guy'
         outputAP = 'Get 100 cookies.'
         if achievements.cookieGuy then
-            outputTOF = true
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 2 then
-        n = 'Golden Cookie Guy I'
-        outputAP = 'Click the Golden Cookie.'
-        if achievements.goldenCookieGuy then
-            outputTOF = true
+        n = 'Cookie Maker'
+        outputAP = 'Get 1,000 cookies.'
+        if achievements.cookieMaker then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 3 then
-        n = 'Golden Cookie Fortune'
-        outputAP = 'Get 500 cookies from a Golden Cookie.'
-        if achievements.goldenCookieFortune then
-            outputTOF = true
+        n = 'Cookie Fashionist'
+        outputAP = 'Get 10,000 cookies.'
+        if achievements.cookieFashionist then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 4 then
-        n = 'Mouse Buyer'
-        outputAP = 'Buy your first mouse.'
-        if achievements.mouseBuyer then
-            outputTOF = true
+        n = 'Golden Cookie Guy I'
+        outputAP = 'Click the Golden Cookie.'
+        if achievements.goldenCookieGuy then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 5 then
-        n = 'Fast Clicker'
-        outputAP = 'Get 100 CPS.'
-        if achievements.fastClicker then
-            outputTOF = true
+        n = 'Golden Cookie Fortune'
+        outputAP = 'Get 500 cookies from a Golden Cookie.'
+        if achievements.goldenCookieFortune then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 6 then
-        n = 'Mouse-A Holic'
-        outputAP = 'Buy 10 mouses.'
-        if achievements.mousaHolic then
-            outputTOF = true
+        n = 'Mouse Buyer'
+        outputAP = 'Buy your first mouse.'
+        if achievements.mouseBuyer then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 7 then
-        n = "Grandma's Cookies"
-        outputAP = 'Buy your first grandma.'
-        if achievements.grandmaCookies then
-            outputTOF = true
+        n = 'Fast Clicker'
+        outputAP = 'Get 100 CPS.'
+        if achievements.fastClicker then
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
         end
     end
     if n == 8 then
+        n = 'Mouse-A Holic'
+        outputAP = 'Buy 10 mouses.'
+        if achievements.mousaHolic then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 9 then
+        n = "Grandma's Cookies"
+        outputAP = 'Buy your first grandma.'
+        if achievements.grandmaCookies then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 10 then
         n = 'Time Waster I'
         outputAP = 'Play for 1 minute.'
         if achievements.timeWaster then
-            outputTOF = true
+            outputTF = true
         else
-            outputTOF = false
+            outputTF = false
+        end
+    end
+    if n == 11 then
+        n = 'Time Waster II'
+        outputAP = 'Play for 10 minutes.'
+        if achievements.timeMan then
+            outputTF = true
+        else
+            outputTF = false
         end
     end
     outputAN = n
