@@ -35,7 +35,7 @@ Follow this step by step:
 
 1. Go to one of the folders in your file explorer.
 2. In the directory bar, type "cmd".
-3. A command prompt should show up, now copy this: ```https://github.com/NAEL2XD/cookie-clicker-psych-edition.git```.
+3. A command prompt should show up, now copy this: ```git clone https://github.com/NAEL2XD/cookie-clicker-psych-edition.git```.
 4. Paste into your command prompt.
 5. Wait.
 6. If it's successful, drag it into your paych engine mods folder.
