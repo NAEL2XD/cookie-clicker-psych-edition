@@ -7,6 +7,7 @@ local gameData = {
     totalCookies = 0,
     totalClicks = 0,
     goldenCookies = 0,
+    upgradesOwn = 0,
     clickMulti = 1,
     cookiePerSecond = 0,
     maxCPS = 0,
@@ -15,13 +16,16 @@ local gameData = {
     -- Shop stuff
     shopOpened = false,
 
-    -- Pricing
+    -- Pricing (PROD)
     mousePrice = 15,
     mouseOwn = 0,
     grandmaPrice = 50,
     grandmaOwn = 0,
     farmPrice = 500,
     farmOwn = 0,
+
+    -- Owning (UPGR)
+    dcOwn = false,
 
     -- Tutorial Stuff
     tutorialBeginner = true,
@@ -35,7 +39,7 @@ local gameData = {
     achievementsGot = 0,
 }
 
-local achievements = {
+local achievements = { -- ACHIEVEMENTS ON A LUA SPRITE??
     cookieGuy = false,
     cookieMaker = false,
     cookieFashionist = false,
@@ -48,6 +52,7 @@ local achievements = {
     mousaHolic = false,
     grandmaCookies = false,
     boughtFarm = false,
+    myNewUpg = false,
 }
 
 local achievementPage = 1
@@ -66,6 +71,8 @@ local tweenStarted = false
 local longStats = ''
 local outputAN = ''
 local outputAP = ''
+
+local DCPrice = 100
 
 -- Here's the code.
 function onCreatePost()
@@ -123,7 +130,7 @@ function onCreatePost()
     runTimer("goldenCookie", math.random(30, 120), 0)
 
     if gameData.shopOpened then
-        triggerShop()
+        triggerShop(false)
         changeShopDescription("")
     end
 
@@ -266,6 +273,20 @@ function onUpdate() -- Uh oh! Big Coding Time
                                 end
                             end
                         end
+                        if mouseOverlaps('doubleCursor') then
+                            changeShopDescription("Double Cursor - When you buy it, you get twice the amount when you click.")
+                            if mouseClicked('left') then
+                                if gameData.cookies + 1 >= DCPrice then
+                                    playSound("purchase")
+                                    gameData.cookies = gameData.cookies - DCPrice
+                                    gameData.upgradesOwn = gameData.upgradesOwn + 1
+                                    gameData.dcOwn = true
+                                    removeLuaSprite("doubleCursor")
+                                    removeLuaText("doubleCursorP")
+                                    getAchievement('myNewUpg')
+                                end
+                            end
+                        end
                     end
                 end
             end
@@ -328,24 +349,30 @@ function onUpdate() -- Uh oh! Big Coding Time
         setTextString("achNameP", outputAN)
         setTextString("achDescP", outputAP)
         setTextString("achUnloP", outputTF)
-        setTextString("achPageP", achievementPage..' / 12')
+        setTextString("achPageP", achievementPage..' / 13')
         if getPropertyFromClass("flixel.FlxG", "keys.justPressed.LEFT") then
             achievementPage = achievementPage - 1
             if achievementPage == 0 then
-                achievementPage = 12
+                achievementPage = 13
             end
         else
             if getPropertyFromClass("flixel.FlxG", "keys.justPressed.RIGHT") then
                 achievementPage = achievementPage + 1
-                if achievementPage == 13 then
+                if achievementPage == 14 then
                     achievementPage = 1
                 end
             end
         end
     end
+    if mouseOverlaps('upgradeButton') and mouseClicked("left") then
+        triggerShop(true)
+    end
+    if mouseOverlaps('itemsButton') and mouseClicked("left") then
+        triggerShop(false)
+    end
     if gameData.cookies >= 15 and gameData.shopOpened == false then
         gameData.shopOpened = true
-        triggerShop()
+        triggerShop(false)
         changeShopDescription("")
     end
 end
@@ -366,7 +393,7 @@ function makeText(name, x, y, size)
     setTextAlignment(name, 'CENTER')
     addLuaText(name)
     setObjectCamera(name, 'camOther')
-    if name == 'mouseP' or name == 'grandmaP' or name =='farmP' or name == 'stats' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
+    if name == 'mouseP' or name == 'grandmaP' or name =='farmP' or name == 'doubleCursorP' or name == 'stats' or name == 'stats2' or name == 'achNameP' or name == 'achDescP' or name == 'achUnloP' or name == 'achPageP' or name == 'achISunP' then
         setTextAlignment(name, 'LEFT')
     end
     if name == ('achTitle' or 'achDesc') then
@@ -377,15 +404,12 @@ end
 function extrasTweeninTime(x, t)
     doTweenX('extrabg', "extrabg", (x - 1217.5), t, "sineOut")
     doTweenX('extras', "extras", x, t, "sineOut")
-    if luaTextExists("stats") then
-        doTweenX('stats', "stats", (x - 900), t, "sineOut")
-    else
-        doTweenX('achNameP', "achNameP", (x - 900), t, "sineOut")
-        doTweenX('achDescP', "achDescP", (x - 900), t, "sineOut")
-        doTweenX('achISunP', "achISunP", (x - 900), t, "sineOut")
-        doTweenX('achUnloP', "achUnloP", (x - 675), t, "sineOut")
-        doTweenX('achPageP', "achPageP", (x - 900), t, "sineOut")
-    end
+    doTweenX('stats', "stats", (x - 900), t, "sineOut")
+    doTweenX('achNameP', "achNameP", (x - 900), t, "sineOut")
+    doTweenX('achDescP', "achDescP", (x - 900), t, "sineOut")
+    doTweenX('achISunP', "achISunP", (x - 900), t, "sineOut")
+    doTweenX('achUnloP', "achUnloP", (x - 675), t, "sineOut")
+    doTweenX('achPageP', "achPageP", (x - 900), t, "sineOut")
     doTweenX('statButton', "statButton", (x - 950), t, "sineOut")
     doTweenX('achievementButton', "achievementButton", (x - 665), t, "sineOut")
 end
@@ -397,8 +421,12 @@ function shopTweeninTime(x, t)
     doTweenX('grandmaP', "grandmaP", (x + 300), t, "sineOut")
     doTweenX('farm', "farm", (x + 230), t, "sineOut")
     doTweenX('farmP', "farmP", (x + 300), t, "sineOut")
+    doTweenX('doubleCursor', "doubleCursor", (x + 230), t, "sineOut")
+    doTweenX('doubleCursorP', "doubleCursorP", (x + 300), t, "sineOut")
     doTweenX('shopbg', "shopbg", (x + 92), t, "sineOut")
     doTweenX('shop', "shop", x, t, "sineOut")
+    doTweenX('itemsButton', "itemsButton", (x + 575), t, "sineOut")
+    doTweenX('upgradeButton', "upgradeButton", (x + 875), t, "sineOut")
 end
 
 function achTweeninTime(x, t, a)
@@ -482,46 +510,79 @@ function changeShopDescription(name)
     end
 end
 
-function triggerShop()
-    if gameData.tutorialBeginner then
-        changeTutorialText("Click on the shop.")
+function triggerShop(isUpgrades)
+    if isUpgrades then
+        removeLuaSprite("mouse")
+        removeLuaSprite("grandma")
+        removeLuaSprite("farm")
+        removeLuaText("mouseP")
+        removeLuaText("grandmaP")
+        removeLuaText("farmP")
+        if not gameData.dcOwn and gameData.mouseOwn >= 1 then
+            makeLuaSprite("doubleCursor", "game/upgrades/doubleCursor", 300, 150)
+            addLuaSprite('doubleCursor')
+            scaleObject("doubleCursor", 2, 2)
+            setObjectCamera("doubleCursor", "camOther")
+            makeText('doubleCursorP', 380, 165, 55)
+        end
+    else
+        if gameData.tutorialBeginner then
+            changeTutorialText("Click on the shop.")
+        end
+        if luaSpriteExists('doubleCursor') then
+            removeLuaSprite("doubleCursor")
+            removeLuaText("doubleCursorP")
+        end
+        if not luaSpriteExists("shop") then
+            makeLuaSprite("shopbg", "game/shopbg", 1520, 0)
+            addLuaSprite('shopbg')
+            scaleObject("shopbg", 2.5, 2)
+            setObjectCamera("shopbg", "camOther")
+    
+            makeLuaSprite("shop", "game/shop", 1400, 500)
+            addLuaSprite('shop')
+            scaleObject("shop", 0.5, 0.5)
+            setObjectCamera("shop", "camOther")
+        
+            makeLuaSprite("itemsButton", "game/itemsButton", 1975, 625)
+            addLuaSprite('itemsButton')
+            scaleObject("itemsButton", 0.75, 0.75)
+            setObjectCamera("itemsButton", "camOther")
+            
+            makeLuaSprite("upgradeButton", "game/upgradeButton", 2275, 625)
+            addLuaSprite('upgradeButton')
+            scaleObject("upgradeButton", 0.75, 0.75)
+            setObjectCamera("upgradeButton", "camOther")
+        end
+        if not luaSpriteExists('mouse') then
+            makeLuaSprite("mouse", "game/products/mouse", 1500, 150)
+            addLuaSprite('mouse')
+            scaleObject("mouse", 0.5, 0.5)
+            setObjectCamera("mouse", "camOther")
+            makeText('mouseP', 2000, 165, 55)
+    
+            makeLuaSprite("grandma", "game/products/grandma", 1530, 260)
+            addLuaSprite('grandma')
+            scaleObject("grandma", 0.625, 0.625)
+            setObjectCamera("grandma", "camOther")
+            shopTweeninTime('1200', '0.3')
+            makeText('grandmaP', 1500, 265, 55)
+    
+            makeLuaSprite("farm", "game/products/farm", 1530, 355)
+            addLuaSprite('farm')
+            scaleObject("farm", 0.625, 0.625)
+            setObjectCamera("farm", "camOther")
+            shopTweeninTime('1200', '0.3')
+            makeText('farmP', 1500, 360, 55)
+    
+            makeText('shopDesc', 0, 10, 20)
+        end
     end
-    makeLuaSprite("shopbg", "game/shopbg", 1520, 0)
-    addLuaSprite('shopbg')
-    scaleObject("shopbg", 2.5, 2)
-    setObjectCamera("shopbg", "camOther")
-
-    makeLuaSprite("shop", "game/shop", 1400, 500)
-    addLuaSprite('shop')
-    scaleObject("shop", 0.5, 0.5)
-    setObjectCamera("shop", "camOther")
-
-    makeLuaSprite("mouse", "game/products/mouse", 1500, 150)
-    addLuaSprite('mouse')
-    scaleObject("mouse", 0.5, 0.5)
-    setObjectCamera("mouse", "camOther")
-    makeText('mouseP', 2000, 165, 55)
-
-    makeLuaSprite("grandma", "game/products/grandma", 1530, 260)
-    addLuaSprite('grandma')
-    scaleObject("grandma", 0.625, 0.625)
-    setObjectCamera("grandma", "camOther")
-    shopTweeninTime('1200', '0.3')
-    makeText('grandmaP', 1500, 265, 55)
-
-    makeLuaSprite("farm", "game/products/farm", 1530, 355)
-    addLuaSprite('farm')
-    scaleObject("farm", 0.625, 0.625)
-    setObjectCamera("farm", "camOther")
-    shopTweeninTime('1200', '0.3')
-    makeText('farmP', 1500, 360, 55)
-
-    makeText('shopDesc', 0, 10, 20)
 end
 
 function updateThings()
     if luaTextExists("stats") then
-        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/12'
+        longStats = 'Time Wasted: '..gameData.hours..':'..gameData.minutes..':'..gameData.seconds..'\nTotal Clicks: '..gameData.totalClicks..'\nCookies Gained Lifetime: '..gameData.totalCookies..'\nGolden Cookies Clicked: '..gameData.goldenCookies..'\nAchievements Got: '..gameData.achievementsGot..'/13\nUpgrades Own: '..gameData.upgradesOwn..'/1'
         setTextString('stats', longStats)
     end
     setPropertyFromClass('lime.app.Application', 'current.window.title', "Cookie Clicker PSYCH EDITION")
@@ -530,6 +591,7 @@ function updateThings()
     setTextString('mouseP', gameData.mousePrice)
     setTextString('grandmaP', gameData.grandmaPrice)
     setTextString('farmP', gameData.farmPrice)
+    setTextString('doubleCursorP', DCPrice)
 end
 
 function resetGameData()
@@ -538,6 +600,7 @@ function resetGameData()
         totalCookies = 0,
         totalClicks = 0,
         goldenCookies = 0,
+        upgradesOwn = 0,
         clickMulti = 1,
         cookiePerSecond = 0,
         maxCPS = 0,
@@ -549,6 +612,7 @@ function resetGameData()
         grandmaOwn = 0,
         farmPrice = 500,
         farmOwn = 0,
+        dcOwn = false,
         tutorialBeginner = true,
         seconds = 0,
         minutes = 0,
@@ -568,6 +632,7 @@ function resetGameData()
         mousaHolic = false,
         grandmaCookies = false,
         boughtFarm = false,
+        myNewUpg = false,
     }
     for k, v in pairs(dgd) do
         setDataFromSave('CCNael2xdVerGD', k, v)
@@ -667,6 +732,10 @@ function getAchievement(achName)
         achievements.boughtFarm = true
         achName = 'Bought the farm'
     end
+    if achName == 'myNewUpg' then
+        achievements.myNewUpg = true
+        achName = 'My First Upgrade'
+    end
     gameData.achievementsGot = gameData.achievementsGot + 1
     playSound("achievement unlocked")
     achTweeninTime("0", "1", achName)
@@ -687,8 +756,15 @@ function cookieClicked()
         cancelTween("movey")
         cancelTween("alpha")
     end
-    gameData.cookies = gameData.cookies + gameData.clickMulti
-    gameData.cookiePerSecond = gameData.cookiePerSecond + gameData.clickMulti
+    if gameData.dcOwn then
+        gameData.cookies = gameData.cookies + (gameData.clickMulti * 2)
+        gameData.cookiePerSecond = gameData.cookiePerSecond + (gameData.clickMulti * 2)
+        setTextString('click', '+' .. gameData.clickMulti * 2)
+    else
+        gameData.cookies = gameData.cookies + gameData.clickMulti
+        gameData.cookiePerSecond = gameData.cookiePerSecond + gameData.clickMulti
+        setTextString('click', '+' .. gameData.clickMulti)
+    end
     gameData.totalCookies = gameData.totalCookies + gameData.clickMulti
     if gameData.maxCPS <= gameData.cookiePerSecond then
         gameData.maxCPS = gameData.cookiePerSecond
@@ -702,7 +778,6 @@ function cookieClicked()
     doTweenY("movey", "click", (mouseY - 175), 2, "linear")
     doTweenAlpha("alpha", "click", 0, 2, "linear")
     tweenStarted = true
-    setTextString('click', '+' .. gameData.clickMulti)
     if gameData.cookiePerSecond >= 100 and not achievements.fastClicker then
         getAchievement('fastClicker')
     end
@@ -821,6 +896,15 @@ function getListOfAchievements(n)
         n = "Bought the farm"
         outputAP = 'Buy your first farm.'
         if achievements.boughtFarm then
+            outputTF = true
+        else
+            outputTF = false
+        end
+    end
+    if n == 13 then
+        n = "My First Upgrade!"
+        outputAP = 'Buy a new upgrade from the upgrade section.'
+        if achievements.myNewUpg then
             outputTF = true
         else
             outputTF = false
