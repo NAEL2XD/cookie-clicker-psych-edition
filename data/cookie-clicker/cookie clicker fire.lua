@@ -57,10 +57,10 @@ local listToRemove = {
 }
 
 function onCreatePost()
-    --[[initSaveData('CookieClicker')
+    initSaveData('CookieClicker')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CookieClicker', k, v)
-    end]]
+    end
 
     setProperty("camGame.alpha", 0)
     setProperty("camHUD.alpha", 0)
