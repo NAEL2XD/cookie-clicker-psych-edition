@@ -2,7 +2,6 @@ local appData = {
     -- main game
     cookie = 0,
     cookiePerClick = 1,
-    cps = 0,
 
     -- products
     CursorOwn = 0,
@@ -14,39 +13,40 @@ local appData = {
     GrandmaUpgradeMult = 1,
 
     -- upgrades
-    rifPrice = 100,
     rifUnlocked = false,
     rifBought = false,
 
-    ctpcPrice = 1000,
     ctpcUnlocked = false,
     ctpcBought = false,
 
-    AmbidextrousPrice = 10000,
     AmbidextrousUnlocked = false,
     AmbidextrousBought = false,
 
-    frgPrice = 1000,
     frgUnlocked = false,
     frgBought = false,
 }
+
+-- Game Data (no save)
+local cps = 0
+local cookieVer = "0.2.0"
 
 -- non list
 local clickCount = 0
 local cookieOverlap = false
 local upgradeLength = 0
+local productHovered = false
 
 -- list
 local productList = {
-    {"Cursor",  "Autoclicks once every 10 seconds.",   0.1,  15},
-    {"Grandma", "A nice grandma to bake more cookies",   1, 100}
+    {"Cursor",  "Autoclicks once every 10 seconds.",   0.1,  15,  15, 1.15},
+    {"Grandma", "A nice grandma to bake more cookies",   1, 100, 100, 1.25}
 }
 
 local upgradesList = {
-    {"rif",          "The mouse and cursors are twice as efficient.", 1, {"Cursor",  1}},
-    {"ctpc",         "The mouse and cursors are twice as efficient.", 1, {"Cursor",  1}},
-    {"Ambidextrous", "The mouse and cursors are twice as efficient.", 1, {"Cursor", 10}},
-    {"frg",          "Grandmas are twice as efficient.",              2, {"Grandma", 1}},
+    {"rif",          "The mouse and cursors are twice as efficient.", 1, {"Cursor",  1},   100},
+    {"ctpc",         "The mouse and cursors are twice as efficient.", 1, {"Cursor",  1},  1000},
+    {"Ambidextrous", "The mouse and cursors are twice as efficient.", 1, {"Cursor", 10}, 10000},
+    {"frg",          "Grandmas are twice as efficient.",              2, {"Grandma", 1},  1000},
 }
 
 local currentUpgradeSpawn = {} -- Leaving it empty
@@ -57,15 +57,15 @@ local listToRemove = {
 }
 
 function onCreatePost()
-    initSaveData('CookieClicker')
+    initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
-        appData[k] = getDataFromSave('CookieClicker', k, v)
+        appData[k] = getDataFromSave('CCNael2xdVer', k, v)
     end
 
     setProperty("camGame.alpha", 0)
     setProperty("camHUD.alpha", 0)
     setPropertyFromClass("ClientPrefs", "hideHud", true)
-    setPropertyFromClass('flixel.FlxG', 'mouse.visible', true);
+    setPropertyFromClass('flixel.FlxG', 'mouse.visible', true)
 
     -- Text Stuff
     makeText("cookieOwn", 0, 75, 60)
@@ -74,6 +74,9 @@ function onCreatePost()
     setTextString("prodDescription", "")
     makeText("Saving", 750, 650, 45)
     setTextString("Saving", "Saving...")
+    makeText("ccpe", 2, 702, 12)
+    setTextAlignment("ccpe", "left")
+    setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
 
     -- Sprites (i should precache them)
     makeSprite("background", 0, 0)
@@ -113,30 +116,40 @@ function onCreatePost()
     makeSprite("intro", 0, 0, true)
     doTweenX("introx", "intro.scale", 200, 3, "easeIn")
     doTweenY("introy", "intro.scale", 200, 3, "easeIn")
+
+    recalculateCps()
+end
+
+function onPause()
+    restartSong(true)
 end
 
 function onUpdate()
     setTextString("cookieOwn", math.floor(appData.cookie))
-    setTextString("cpsOwn", appData.cps*appData.CursorUpgradeMult.." cookies per second")
+    setTextString("cpsOwn", cps.." cookies per second")
 
     if mouseClicked("left") then
         playSound("click")
     end
 
+    if productHovered then
+        productHovered = false
+        runTimer("prodBye", 0, 1)
+    end
+
     -- Products
     for i in pairs(productList) do
-        setTextString("prodDescription", "")
         setBlendMode("productInfo"..i, "NORMAL")
         if mouseOverlaps("productInfo"..i) then
+            productHovered = true
             setBlendMode("productInfo"..i, "LIGHTEN")
             setTextString("prodDescription", productList[i][2])
             if mouseClicked("left") and appData.cookie >= appData[productList[i][1].."Price"] then
                 playSound("purchase")
                 appData.cookie = appData.cookie - appData[productList[i][1].."Price"]
                 appData[productList[i][1].."Own"] = appData[productList[i][1].."Own"] + 1
-                appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * 1.1)
+                appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * productList[i][6])
                 setTextString("price"..i, math.floor(appData[productList[i][1].."Price"]))
-                appData.cps = appData.cps + productList[i][3]
                 setTextString("own"..i, appData[productList[i][1].."Own"])
                 for ii in pairs(upgradesList) do
                     local isUnlocked = true
@@ -150,6 +163,7 @@ function onUpdate()
                         table.insert(upgradesUnlocked, ii)
                     end
                 end
+                recalculateCps()
             end
         end
         if appData.cookie >= appData[productList[i][1].."Price"] then
@@ -164,26 +178,25 @@ function onUpdate()
         setBlendMode("upgradeFrame"..i, "NORMAL")
         if mouseOverlaps("upgradeFrame"..i) then
             setBlendMode("upgradeFrame"..i, "LIGHTEN")
-            setTextString("prodDescription", upgradesList[i][2].."\nCookie Costs: "..appData[upgradesList[i][1].."Price"])
-            if mouseClicked("left") and appData.cookie >= appData[upgradesList[i][1].."Price"] then
+            setTextString("prodDescription", upgradesList[i][2].."\nCookie Costs: "..upgradesList[i][5])
+            productHovered = true
+            if mouseClicked("left") and appData.cookie >= upgradesList[i][5] then
                 playSound("purchase")
-                appData.cookie = appData.cookie - appData[upgradesList[i][1].."Price"]
-                removeLuaSprite("upgradeFrame"..i)
-                removeLuaSprite("upgrades/"..upgradesList[i][1])
-                table.remove(currentUpgradeSpawn, i)
+                appData.cookie = appData.cookie - upgradesList[i][5]
                 upgradeLength = upgradeLength - 1
                 appData[upgradesList[i][1].."Bought"] = true
-                for ii=1,upgradeLength do
-                    setProperty("upgradeFrame"..currentUpgradeSpawn[ii]..".x", -60 + (60*ii))
-                    setProperty("upgrades/"..upgradesList[currentUpgradeSpawn[ii]][1]..".x", -55 + (60*ii))
+                removeLuaSprite("upgradeFrame"..i)
+                removeLuaSprite("upgrades/"..upgradesList[i][1])
+                local exists = 0
+                for ii=1,#upgradesList do
+                    if luaSpriteExists("upgradeFrame"..ii) then
+                        exists = exists + 1
+                        setProperty("upgradeFrame"..ii..".x", -60 + (60*exists))
+                        setProperty("upgrades/"..upgradesList[ii][1]..".x", -55 + (60*exists))
+                    end
                 end
-                if upgradesList[i][3] == 1 then
-                    appData.cookiePerClick = appData.cookiePerClick*2
-                    appData.CursorUpgradeMult = appData.CursorUpgradeMult*2
-                end
-                if upgradesList[i][3] == 2 then
-                    appData.GrandmaUpgradeMult = appData.GrandmaUpgradeMult*2
-                end
+                table.remove(currentUpgradeSpawn, i)
+                recalculateCps(upgradesList[i][3]) -- HUH??? WHY DOES IT NOT SEND!? IS IT STUPID???
             end
         end
     end
@@ -201,11 +214,10 @@ function onUpdate()
             doTweenX("boing1", "cookie.scale", 0.225, 2, "elasticOut")
             doTweenY("boing2", "cookie.scale", 0.225, 2, "elasticOut")
             appData.cookie = appData.cookie + appData.cookiePerClick
-            if appData.cookie >= 15 and not luaTextExists("price1") then
-                makeProduct(1)
-            end
-            if appData.cookie >= 100 and not luaTextExists("price2") then
-                makeProduct(2)
+            for i in pairs(productList) do
+                if appData.cookie >= productList[i][5] and not luaTextExists("price"..i) then
+                    makeProduct(i)
+                end
             end
             spawnCookies(true)
         end
@@ -220,12 +232,12 @@ end
 
 function onTimerCompleted(tag, loops, loopsLeft)
     if stringStartsWith(tag, "cps") then
-        appData.cookie = appData.cookie + appData.cps*appData.CursorUpgradeMult
-        if appData.cps >= 1 then
-            for i=1,appData.cps do
-                spawnCookies(false)
-            end
-        end
+        local seconds = 0
+        repeat
+            seconds = seconds + (1/cps)
+            runTimer("cookieFall"..seconds, seconds, 1)
+        until seconds >= 1
+        appData.cookie = appData.cookie + math.fmod(cps,1)
     end
     if stringStartsWith(tag, "save") then
         if stringEndsWith(tag, "Back") then
@@ -233,13 +245,20 @@ function onTimerCompleted(tag, loops, loopsLeft)
             doTweenX("save2", "loading", 1485, 0.75, "cubeIn")
         else
             for k, v in pairs(appData) do
-                setDataFromSave('CookieClicker', k, v)
+                setDataFromSave('CCNael2xdVer', k, v)
             end
-            flushSaveData('CookieClicker')
+            flushSaveData('CCNael2xdVer')
             doTweenX("save1", "Saving", 450, 0.75, "cubeOut")
             doTweenX("save2", "loading", 1185, 0.75, "cubeOut")
             runTimer("saveBack", 3, 1)
         end
+    end
+    if tag == "prodBye" then
+        setTextString("prodDescription", "")
+    end
+    if stringStartsWith(tag, "cookieFall") then
+        appData.cookie = appData.cookie + 1
+        spawnCookies(false)
     end
 end
 
@@ -311,10 +330,10 @@ end
 function makeUpgrade(id)
     appData[upgradesList[id][1].."Unlocked"] = true
     upgradeLength = upgradeLength + 1
+    table.insert(currentUpgradeSpawn, id)
     makeSprite("upgradeFrame"..id, -60 + (61*upgradeLength), 0)
     scaleObject("upgradeFrame"..id, 0.5, 0.5)
     makeSprite("upgrades/"..upgradesList[id][1], -55 + (61*upgradeLength), 7.5)
-    table.insert(currentUpgradeSpawn, id)
 end
 
 function spawnCookies(isClicked)
@@ -343,13 +362,25 @@ function spawnCookies(isClicked)
             doTweenY("click"..clickCount, opti, getProperty(opti..".y") - 200, 2.5, "linear")
             doTweenAlpha(opti, opti, 0, 2.5, "linear")
         else
-            doTweenX("weew"..opti2, opti2, getProperty(opti2..".x")+getRandomInt(-75, 75), 1.25, "5")
-            doTweenY("velo1"..opti2, opti2, 900, 1.25, "sineIn")
-            doTweenAngle(opti2, opti2, getRandomInt(-180, 180), 1.25, "linear")
-            doTweenAlpha("ohHi1"..opti2, opti2, -0.33, 1.25, "linear")
+            doTweenX("weew"..opti2, opti2, getProperty(opti2..".x")+getRandomInt(-150, 150), 1.675, "5")
+            doTweenY("velo1"..opti2, opti2, 900, 1.675, "sineIn")
+            doTweenAngle(opti2, opti2, getRandomInt(-180, 180), 1.675, "linear")
+            doTweenAlpha("ohHi1"..opti2, opti2, -0.33, 1.675, "linear")
         end
         opti2 = "smallCookieSky"..clickCount
     end
+end
+
+function recalculateCps(name)
+    if name == 1 then
+        appData.cookiePerClick = appData.cookiePerClick*2
+        appData.CursorUpgradeMult = appData.CursorUpgradeMult*2
+    end
+    if name == 2 then
+        appData.GrandmaUpgradeMult = appData.GrandmaUpgradeMult*2
+    end
+    cps = appData.CursorOwn/10 * appData.CursorUpgradeMult
+    cps = cps + (appData.GrandmaOwn * appData.GrandmaUpgradeMult)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
