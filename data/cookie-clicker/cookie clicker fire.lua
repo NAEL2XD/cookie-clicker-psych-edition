@@ -22,6 +22,7 @@ local appData = {
 
     -- settings
     gameLow = false,
+    cookieSpawnLimit = 100,
 
     -- upgrades
     rifUnlocked = false,
@@ -49,6 +50,7 @@ local appData = {
 -- Game Data (no save)
 local cps = 0
 local cookieVer = "0.3.0"
+local timerRan = false
 
 -- non list
 local clickCount = 0
@@ -83,11 +85,12 @@ local allGraphic = {}
 local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"}
 local extrasName = {
     "Game Settings",
-    --"Restart", -- Use it only for Debugging Purposes
+    "Restart", -- Use it only for Debugging Purposes
     "Save & Exit",
 }
 local settingsName = {
-    {"Low Detail", "gameLow", "If you do not want a lotta lag, enable this! Disables cookie spawning and text spawning.", "boolean"},
+    {"Low Detail",         "gameLow",          "If you do not want a lotta lag, enable this! Disables cookie spawning and text spawning.", "boolean"},
+    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 500, 0.025}}
 }
 
 function onCreatePost()
@@ -166,7 +169,11 @@ function onUpdate()
     setTextString("cpsOwn", cps.." cookies per second")
 
     if mouseClicked("left") then
-        playSound("click")
+        if cookieOverlap then
+            playSound("click"..getRandomInt(1,7))
+        else
+            playSound("click")
+        end
     end
 
     if productHovered then
@@ -253,7 +260,7 @@ function onUpdate()
                 if mouseClicked("left") and appData.cookie >= appData[productList[i][1].."Price"] then
                     playSound("purchase")
                     appData.cookie = appData.cookie - appData[productList[i][1].."Price"]
-                    appData[productList[i][1].."Own"] = appData[productList[i][1].."Own"] + 1
+                    appData[productList[i][1].."Own"] = appData[productList[i][1].."Own"]+1
                     appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * productList[i][5])
                     setTextString("price"..i, math.floor(appData[productList[i][1].."Price"]))
                     setTextString("own"..i, appData[productList[i][1].."Own"])
@@ -295,14 +302,14 @@ function onUpdate()
                 if mousePressed("left") and appData.cookie >= upgradesList[i][5] and not isClicked then
                     playSound("purchase")
                     appData.cookie = appData.cookie - upgradesList[i][5]
-                    upgradeLength = upgradeLength - 1
+                    upgradeLength = upgradeLength-1
                     appData[upgradesList[i][1].."Bought"] = true
                     removeLuaSprite("upgradeFrame"..i)
                     removeLuaSprite("upgrades/"..upgradesList[i][1])
                     local exists = 0
                     for ii=1,#upgradesList do
                         if luaSpriteExists("upgradeFrame"..ii) then
-                            exists = exists + 1
+                            exists = exists+1
                             setProperty("upgradeFrame"..ii..".x", -60 + (60*exists))
                             setProperty("upgrades/"..upgradesList[ii][1]..".x", -55 + (60*exists))
                         end
@@ -383,23 +390,27 @@ function onUpdate()
             if extrasState == "settings" then
                 setTextString("settingsDesc", settingsName[settingsChosen][3].."\nPress ESCAPE to leave Game Settings and Save your Progress.")
                 if keyJustPressed("up") then
-                    settingsChosen = settingsChosen - 1
+                    settingsChosen = settingsChosen-1
                     if settingsChosen == 0 then
                         settingsChosen = #settingsName
                     end
                     makeSettings()
+                    playSound("scrollMenu")
                 elseif keyJustPressed("down") then
-                    settingsChosen = settingsChosen + 1
+                    settingsChosen = settingsChosen+1
                     if settingsChosen == #settingsName+1 then
                         settingsChosen = 1
                     end
                     makeSettings()
+                    playSound("scrollMenu")
                 end
                 for i=1,#settingsName do
                     if i == settingsChosen then
                         setTextBorder("settings"..i, 3, "676767")
-                        if keyJustPressed("accept") then
-                            if settingsName[i][4] == "boolean" then
+                        if settingsName[i][4] == "boolean" then
+                            timerRan = false
+                            cancelTimer("settingsScroll")
+                            if keyJustPressed("accept") then
                                 local isTrue = appData[settingsName[i][2]]
                                 if isTrue then
                                     appData[settingsName[i][2]] = false
@@ -407,8 +418,14 @@ function onUpdate()
                                     appData[settingsName[i][2]] = true
                                 end
                                 playSound("confirmMenu")
+                                setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
                             end
-                            makeSettings()
+                        end
+                        if settingsName[i][4] == "int" then
+                            if not timerRan then
+                                runTimer("settingsScroll", settingsName[i][5][3], 0)
+                            end
+                            timerRan = true
                         end
                     else
                         setTextBorder("settings"..i, 0)
@@ -417,6 +434,7 @@ function onUpdate()
             end
             if keyJustPressed("pause") and not keyboardJustPressed("ENTER") then
                 extrasState = "menu"
+                timerRan = false
                 removeLuaText("settingsDesc")
                 runTimer("save", 0.01, 1)
                 makeSettings()
@@ -429,9 +447,9 @@ end
 function onTimerCompleted(tag, loops, loopsLeft)
     if stringStartsWith(tag, "cps") then
         local seconds = 0
-        if cps >= 100 then
+        if cps >= appData.cookieSpawnLimit then
             repeat
-                seconds = seconds + (1/100)
+                seconds = seconds + (1/appData.cookieSpawnLimit)
                 runTimer("cookieFall"..seconds, seconds, 1)
             until seconds >= 1
         else
@@ -440,7 +458,7 @@ function onTimerCompleted(tag, loops, loopsLeft)
                 runTimer("cookieFall"..seconds, seconds, 1)
             until seconds >= 1
         end
-        appData.cookie = appData.cookie + math.fmod(cps,1)
+        appData.cookie = appData.cookie+cps
     end
     if stringStartsWith(tag, "save") then
         if stringEndsWith(tag, "Back") then
@@ -460,7 +478,6 @@ function onTimerCompleted(tag, loops, loopsLeft)
         setTextString("prodDescription", "")
     end
     if stringStartsWith(tag, "cookieFall") then
-        appData.cookie = appData.cookie + 1
         spawnCookies(false)
     end
     if tag == "camloop" then
@@ -472,6 +489,21 @@ function onTimerCompleted(tag, loops, loopsLeft)
             table.insert(aCol, getRandomInt(0,255))
             doTweenX("movin"..i, "move"..i, aCol[i], 2, "linear")
         end
+    end
+    if tag == "settingsScroll" then
+        local getVal = appData[settingsName[settingsChosen][2]]
+        if keyPressed("left") then
+            if getVal <= settingsName[settingsChosen][5][1] then
+                getVal = getVal+1
+            end
+            appData[settingsName[settingsChosen][2]] = getVal-1
+        elseif keyPressed("right") then
+            if getVal >= settingsName[settingsChosen][5][2] then
+                getVal = getVal-1
+            end
+            appData[settingsName[settingsChosen][2]] = getVal+1
+        end
+        setTextString("settings"..settingsChosen, settingsName[settingsChosen][1]..": "..tostring(appData[settingsName[settingsChosen][2]]))
     end
 end
 
@@ -558,7 +590,7 @@ end
 
 function makeUpgrade(id)
     appData[upgradesList[id][1].."Unlocked"] = true
-    upgradeLength = upgradeLength + 1
+    upgradeLength = upgradeLength+1
     makeSprite("upgradeFrame"..id, -60 + (61*upgradeLength), 0)
     scaleObject("upgradeFrame"..id, 0.5, 0.5)
     makeSprite("upgrades/"..upgradesList[id][1], -55 + (61*upgradeLength), 7.5)
@@ -572,7 +604,6 @@ function makeExtras(id)
 end
 
 function makeSettings()
-    playSound("scrollMenu")
     for i=1,#settingsName do
         removeLuaText("settings"..i)
         if not (extrasState == "menu") then
@@ -607,7 +638,7 @@ function sortUpgrade()
 end
 
 function spawnCookies(isClicked)
-    clickCount = clickCount + 1
+    clickCount = clickCount+1
     local opti = 'cookieClicked'..clickCount
     local x = getMouseX("other") - 635
     local y = getMouseY("other")
@@ -681,7 +712,7 @@ function rgbToHex(rgb)
     for key, value in pairs(rgb) do
         local hex = ''
         while (value > 0) do
-            local index = math.fmod(value, 16) + 1
+            local index = math.fmod(value, 16)+1
             value = math.floor(value / 16)
             hex = string.sub('0123456789ABCDEF', index, index) .. hex
         end
