@@ -1,3 +1,5 @@
+-- "Why would you put cookie clicker in da fnf" - zamination_1
+
 local appData = {
     -- main game
     cookie = 0,
@@ -49,8 +51,7 @@ local appData = {
 
 -- Game Data (no save)
 local cps = 0
-local cookieVer = "0.3.0"
-local timerRan = false
+local cookieVer = "0.4.0"
 
 -- non list
 local clickCount = 0
@@ -59,19 +60,28 @@ local upgradeLength = 0
 local productHovered = false
 local isClicked = false
 local insideExtras = false
+local goldenCookieHere = false
+local timerRan = false
 local settingsChosen = 1
 local extrasState = "menu"
+local scrollFast = 0
 
--- list
 local productList = {
-    --  Name             Description                                      CPS   St. Val     Multi
+--   Name | Description | CPS | St. Val | Multi
     {"Cursor",  "Autoclicks once every 10 seconds.",          0.1,    15,  1.15},
     {"Grandma", "A nice grandma to bake more cookies",          1,   100,  1.25},
     {"Farm",    "Grows cookie plants from cookie seeds.",       8,  1100,  1.05},
     {"Mine",    "Mines out cookie dough and chocolate chips.", 47, 12000,  1.01}
 }
+
+local settingsName = {
+    -- Name | Val in appData | Description | Type (if int: {min, max, seconds to num})
+    {"Low Detail", "gameLow", "If you do not want a lotta lag, enable this! Disables cookie spawning and text spawning.", "boolean"},
+    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 1000, 0.01}}
+}
+
 local upgradesList = {
-    --     Name               Description                                         ID     Req to Unlock  Starting VAL
+--   Name | Description | ID | Req to Unlock {Products, value} | St. VAL
     {"rif",          "The mouse and cursors are twice as efficient.", 1, {"Cursor",   1},      100},
     {"ctpc",         "The mouse and cursors are twice as efficient.", 1, {"Cursor",   1},     1000},
     {"Ambidextrous", "The mouse and cursors are twice as efficient.", 1, {"Cursor",  10},    10000},
@@ -80,6 +90,7 @@ local upgradesList = {
     {"ld",           "Grandmas are twice as efficient.",              2, {"Grandma", 25},    50000},
     {"ch",           "Farms are twice as efficient.",                 3, {"Farm",     1},    11000}
 }
+
 local upgradesUnlocked = {}
 local allGraphic = {}
 local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"}
@@ -88,16 +99,12 @@ local extrasName = {
     "Restart", -- Use it only for Debugging Purposes
     "Save & Exit",
 }
-local settingsName = {
-    {"Low Detail",         "gameLow",          "If you do not want a lotta lag, enable this! Disables cookie spawning and text spawning.", "boolean"},
-    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 500, 0.025}}
-}
 
 function onCreatePost()
-    --[[initSaveData('CCNael2xdVer')
+    initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CCNael2xdVer', k, v)
-    end]]
+    end
 
     setProperty("camGame.alpha", 0)
     setProperty("camHUD.alpha", 0)
@@ -143,6 +150,7 @@ function onCreatePost()
 
     runTimer("cps", 1, 0)
     runTimer("save", 60, 0)
+    runTimer("goldenCookie", getRandomFloat(60, 300), 1)
 
     for i in pairs(productList) do
         if appData.cookie >= productList[i][4] then
@@ -250,6 +258,9 @@ function onUpdate()
     end
 
     if not insideExtras then
+        if goldenCookieHere then
+            spawnGoldenCookie()
+        end
         -- Products
         for i in pairs(productList) do
             setBlendMode("productInfo"..i, "NORMAL")
@@ -286,7 +297,6 @@ function onUpdate()
                 setTextColor("price"..i, "FF0000")
             end
         end
-
         -- Upgrades
         for i in pairs(upgradesList) do
             setBlendMode("upgradeFrame"..i, "NORMAL")
@@ -320,7 +330,6 @@ function onUpdate()
                 isClicked = mousePressed("left") -- Psych Engine really making me make another local then
             end
         end
-
         -- Cookie Physics
         if mouseOverlaps('cookie') then
             if not cookieOverlap then
@@ -348,6 +357,12 @@ function onUpdate()
                 doTweenY("boing2", "cookie.scale", 0.2, 2, "elasticOut")
             end
             cookieOverlap = false
+        end
+        if mouseOverlaps("goldCookie") and mouseClicked("left") then
+            removeLuaSprite("goldCookie")
+            local chance = getRandomInt(1, 1)
+            getGoldenCookieReward(chance)
+            playSound("fortune")
         end
     else
         local find = {}
@@ -389,14 +404,14 @@ function onUpdate()
             end
             if extrasState == "settings" then
                 setTextString("settingsDesc", settingsName[settingsChosen][3].."\nPress ESCAPE to leave Game Settings and Save your Progress.")
-                if keyJustPressed("up") then
+                if keyboardJustPressed("W") or keyboardJustPressed("Z") or keyboardJustPressed("UP") then
                     settingsChosen = settingsChosen-1
                     if settingsChosen == 0 then
                         settingsChosen = #settingsName
                     end
                     makeSettings()
                     playSound("scrollMenu")
-                elseif keyJustPressed("down") then
+                elseif keyboardJustPressed("S") or keyboardJustPressed("DOWN") then
                     settingsChosen = settingsChosen+1
                     if settingsChosen == #settingsName+1 then
                         settingsChosen = 1
@@ -423,6 +438,7 @@ function onUpdate()
                         end
                         if settingsName[i][4] == "int" then
                             if not timerRan then
+                                scrollFast = getSpeed()
                                 runTimer("settingsScroll", settingsName[i][5][3], 0)
                             end
                             timerRan = true
@@ -492,18 +508,36 @@ function onTimerCompleted(tag, loops, loopsLeft)
     end
     if tag == "settingsScroll" then
         local getVal = appData[settingsName[settingsChosen][2]]
-        if keyPressed("left") then
+        if keyboardPressed("Q") or keyboardPressed("A") or keyboardPressed("LEFT") then
             if getVal <= settingsName[settingsChosen][5][1] then
-                getVal = getVal+1
+                appData[settingsName[settingsChosen][2]] = settingsName[settingsChosen][5][1]
+            else
+                appData[settingsName[settingsChosen][2]] = getVal-scrollFast
             end
-            appData[settingsName[settingsChosen][2]] = getVal-1
-        elseif keyPressed("right") then
-            if getVal >= settingsName[settingsChosen][5][2] then
-                getVal = getVal-1
-            end
-            appData[settingsName[settingsChosen][2]] = getVal+1
         end
-        setTextString("settings"..settingsChosen, settingsName[settingsChosen][1]..": "..tostring(appData[settingsName[settingsChosen][2]]))
+        if keyboardPressed("D") or keyboardPressed("RIGHT") then
+            if getVal >= settingsName[settingsChosen][5][2] then
+                appData[settingsName[settingsChosen][2]] = settingsName[settingsChosen][5][2]
+            else
+                appData[settingsName[settingsChosen][2]] = getVal+scrollFast
+            end
+        end
+        setTextString("settings"..settingsChosen, settingsName[settingsChosen][1]..": "..tostring(math.floor(appData[settingsName[settingsChosen][2]])))
+    end
+    if tag == "goldenCookie" then
+        if insideExtras then
+            goldenCookieHere = true
+        else
+            spawnGoldenCookie()
+        end
+    end
+    if tag == "gCookieBye" then
+        doTweenAlpha("byeGC", "goldCookie", 0, 2.5, "linear")
+        doTweenX("weews1", "goldCookie.scale", 0.75, 2.5, "linear")
+        doTweenY("weews2", "goldCookie.scale", 0.75, 2.5, "linear")
+    end
+    if tag == "byeGC" then
+        removeLuaSprite("goldCookie")
     end
 end
 
@@ -517,6 +551,16 @@ function onTweenCompleted(tag)
             end
             break
         end
+    end
+    if tag == "repeatGoldLeft" then
+        doTweenAngle("repeatGoldRight", "goldCookie", -5, 0.25, "linear")
+    end
+    if tag == "repeatGoldRight" then
+        doTweenAngle("repeatGoldLeft", "goldCookie", 5, 0.25, "linear")
+    end
+    if tag == "luck" then
+        removeLuaText("luck")
+        removeLuaSprite("glowin")
     end
 end
 
@@ -605,6 +649,9 @@ end
 
 function makeSettings()
     for i=1,#settingsName do
+        if settingsName[i][4] == "int" then
+            appData[settingsName[i][2]] = math.floor(appData[settingsName[i][2]])
+        end
         removeLuaText("settings"..i)
         if not (extrasState == "menu") then
             makeText("settings"..i, 100+(12*(i-settingsChosen)), 280+(60*(i-settingsChosen)), 50)
@@ -638,6 +685,7 @@ function sortUpgrade()
 end
 
 function spawnCookies(isClicked)
+    -- complex shit? yeah i made it complex.
     clickCount = clickCount+1
     local opti = 'cookieClicked'..clickCount
     local x = getMouseX("other") - 635
@@ -689,6 +737,47 @@ function recalculateCps(name)
     for i=2,#productList do
         cps = cps + ((appData[productList[i][1].."Own"]*productList[i][3]) * appData[productList[i][1].."UpgradeMult"])
     end
+end
+
+function getGoldenCookieReward(rew)
+    -- could've been thinking for some rewards, i'm lazzzzy. :(
+    local x = getMouseX("other")-625
+    local y = getMouseY("other")-25
+    makeSprite('glowin', getMouseX("other")-175, y+5)
+    scaleObject("glowin", 1.25, 1.35)
+    makeText("luck", x, y, 24)
+    doTweenY("Lucky!", "luck", y-150, 2.5, "cubeOut")
+    doTweenAlpha("luck", "luck", 0, 5, "cubeOut")
+    doTweenY("Lucky!2", "glowin", y-145, 2.5, "cubeOut")
+    doTweenAlpha("glowin", "glowin", 0, 5, "cubeOut")
+    if rew == 1 then
+        local reward = math.floor(cps*getRandomFloat(25, 200))
+        setTextString("luck", "Lucky!\n+"..reward.." cookies.")
+        appData.cookie = appData.cookie + reward
+    end
+end
+
+function spawnGoldenCookie()
+    cancelTimer("goldenCookie")
+    runTimer("goldenCookie", getRandomInt(60, 200), 0)
+    makeSprite("goldCookie", getRandomInt(-10, 800), getRandomInt(-10, 650), false)
+    setProperty("goldCookie.alpha", 0)
+    scaleObject("goldCookie", 0.75, 0.75)
+    doTweenAlpha("eug", "goldCookie", 0.65, 2.5, "linear")
+    doTweenX("weews1", "goldCookie.scale", 1, 2.5, "linear")
+    doTweenY("weews2", "goldCookie.scale", 1, 2.5, "linear")
+    runTimer("gCookieBye", getRandomInt(10, 13))
+end
+
+function getSpeed()
+    local fast = 0
+    local count = 0
+    local getFps = getPropertyFromClass('ClientPrefs', 'framerate')
+    repeat
+        fast = fast + settingsName[settingsChosen][5][3]
+        count = count + 1
+    until fast >= 1
+    return count / getFps
 end
 
 ------------------------------------------------------------------------------------------------------------------------
