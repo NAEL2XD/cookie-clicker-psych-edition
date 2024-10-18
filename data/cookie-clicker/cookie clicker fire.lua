@@ -94,10 +94,10 @@ local settingsName = {
 }
 
 function onCreatePost()
-    initSaveData('CCNael2xdVer')
+    --[[initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CCNael2xdVer', k, v)
-    end
+    end]]
 
     setProperty("camGame.alpha", 0)
     setProperty("camHUD.alpha", 0)
