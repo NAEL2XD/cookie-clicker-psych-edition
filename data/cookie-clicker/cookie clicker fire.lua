@@ -26,6 +26,7 @@ local appData = {
     flyCookie = true,
     cookieSpawnLimit = 100,
     flyNumbs = true,
+    watermark = true,
 
     -- upgrades
     rifUnlocked = false,
@@ -78,8 +79,9 @@ local productList = {
 local settingsName = {
     -- Name | Val in appData | Description | Type (if int: {min, max, seconds to num})
     {"Cookie Popups", "flyCookie", "If true, the cookie will spawn from cookie clicked and on top of game.", "boolean"},
-    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 1000, 0.005}},
+    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookies you want them to spawn on top?", "int", {1, 1000, 0.005}},
     {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
+    {"Watermark", "watermark", "If true, then the watermark will be gone. Requires a restart to take effect.", "boolean"},
 }
 
 local upgradesList = {
@@ -120,9 +122,11 @@ function onCreatePost()
     setTextString("prodDescription", "")
     makeText("Saving", 750, 650, 45)
     setTextString("Saving", "Saving...")
-    makeText("ccpe", 2, 702, 12)
-    setTextAlignment("ccpe", "left")
-    setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
+    if not appData.Watermark then
+        makeText("ccpe", 2, 702, 12)
+        setTextAlignment("ccpe", "left")
+        setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
+    end
 
     -- Sprites (i should precache them)
     makeSprite("background", 0, 0)
@@ -232,7 +236,7 @@ function onUpdate()
             runTimer("camloop", 9, 0)
             setProperty("static.alpha", 1)
             doTweenAlpha("static", "static", 0.2, 1, "linear")
-            graphicMake("coolCol", 0, 0, 1280, 720, "FF0000")
+            graphicMake("coolCol", 0, 0, 1280, 720, "000000")
             graphicMake("bar1", 0, 0, 1280, 45, "000000")
             graphicMake("bar2", 0, 0, 45, 1280, "000000")
             graphicMake("bar3", 1240, 0, 45, 1280, "000000")
@@ -240,7 +244,7 @@ function onUpdate()
             for i=1,3 do
                 graphicMake("move"..i, 0, 0, 0, 0, "000000")
             end
-            doTweenColor("color1", "coolCol", "FFFF00", 2, "linear")
+            runTimer("colorChangebegin", 0, 1)
             runTimer("colorChange", 2, 0)
             setProperty("ccpe.alpha", 0)
             setProperty("cookieOwn.alpha", 0)
@@ -371,8 +375,8 @@ function onUpdate()
         for i=1,3 do
             table.insert(find, math.floor(getProperty("move"..i..".x")))
         end
-        setProperty("coolCol.color", getColorFromHex(rgbToHex(find)))
-
+        graphicMake("coolCol", 0, 0, 1280, 720, rgbToHex(find))
+        setObjectOrder("coolCol", getObjectOrder("bar1"))
         -- Le Menu Items
         if extrasState == "menu" then
             doTweenY("no no", "extras", 625, 0.25, "linear")
@@ -405,7 +409,7 @@ function onUpdate()
                 setProperty("extrasName"..i..".alpha", 0)
             end
             if extrasState == "settings" then
-                graphicMake("infoThing1", 58, 55, 1169, 90, "FFFFFF")
+                graphicMake("infoThing1", 59, 55, 1167, 90, "FFFFFF")
                 graphicMake("infoThing2", 65, 60, 1155, 80, "000000")
                 setTextString("settingsDesc", settingsName[settingsChosen][3].."\nPress ESCAPE to leave Game Settings and Save your Progress.")
                 if keyboardJustPressed("W") or keyboardJustPressed("Z") or keyboardJustPressed("UP") then
@@ -425,7 +429,7 @@ function onUpdate()
                 end
                 for i=1,#settingsName do
                     if i == settingsChosen then
-                        setTextBorder("settings"..i, 3, "676767")
+                        setTextBorder("settings"..i, 3, "456789")
                         if settingsName[i][4] == "boolean" then
                             timerRan = false
                             cancelTimer("settingsScroll")
@@ -505,7 +509,7 @@ function onTimerCompleted(tag, loops, loopsLeft)
     if tag == "camloop" then
         playSound("camloop", 1, "hi1")
     end
-    if tag == "colorChange" then
+    if stringStartsWith(tag, "colorChange") then
         local aCol = {}
         for i=1,3 do
             table.insert(aCol, getRandomInt(0,255))
@@ -660,12 +664,13 @@ function makeSettings()
         end
         removeLuaText("settings"..i)
         if not (extrasState == "menu") then
-            makeText("settings"..i, 100+(12*(i-settingsChosen)), 280+(60*(i-settingsChosen)), 50)
+            makeText("settings"..i, 175+(20*(i-settingsChosen)), 320+(60*(i-settingsChosen)), 50)
             setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
             setTextBorder("settings"..i, 3, "676767")
             setTextAlignment("settings"..i, "left")
         end
     end
+    graphicMake("yea", 0, 0, 1000, 5, "000000")
 end
 
 function sortUpgrade()
@@ -719,9 +724,10 @@ function spawnCookies(isClicked)
                 doTweenAlpha("ohHi"..opti2, opti2, -0.33, 1.5, "linear")
             else
                 doTweenX("weew"..opti2, opti2, getProperty(opti2..".x")+getRandomInt(-150, 150), 1.675, "5")
-                doTweenY("velo1"..opti2, opti2, 900, 1.675, "sineIn")
+                doTweenY("velo1"..opti2, opti2, 900+getRandomFloat(25, 250), 1.675, "sineIn")
                 doTweenAngle(opti2, opti2, getRandomInt(-180, 180), 1.675, "linear")
                 doTweenAlpha("ohHi1"..opti2, opti2, -0.33, 1.675, "linear")
+                setObjectOrder(opti2, getObjectOrder("background")+1)
             end
             opti2 = "smallCookieSky"..clickCount
         end
