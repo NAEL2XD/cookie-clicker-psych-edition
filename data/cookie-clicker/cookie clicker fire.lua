@@ -700,6 +700,9 @@ function spawnCookies(isClicked)
     local repeatTimes = (isClicked and 1 or 2)
     if repeatTimes == 1 and appData.flyNumbs then
         makeText(opti, x, y, 25)
+        setTextString(opti, "+"..appData.cookiePerClick)
+        doTweenY("click"..clickCount, opti, getProperty(opti..".y") - 200, 2.5, "linear")
+        doTweenAlpha(opti, opti, 0, 2.5, "linear")
     end
     if appData.flyCookie then
         for i=repeatTimes,2 do
@@ -714,9 +717,6 @@ function spawnCookies(isClicked)
                 doTweenY("velo"..opti2, opti2, y+(getMouseY("other")+395), 1.5, "backIn")
                 doTweenAngle(opti2, opti2, getRandomInt(-90, 90), 1.5, "linear")
                 doTweenAlpha("ohHi"..opti2, opti2, -0.33, 1.5, "linear")
-                setTextString(opti, "+"..appData.cookiePerClick)
-                doTweenY("click"..clickCount, opti, getProperty(opti..".y") - 200, 2.5, "linear")
-                doTweenAlpha(opti, opti, 0, 2.5, "linear")
             else
                 doTweenX("weew"..opti2, opti2, getProperty(opti2..".x")+getRandomInt(-150, 150), 1.675, "5")
                 doTweenY("velo1"..opti2, opti2, 900, 1.675, "sineIn")
