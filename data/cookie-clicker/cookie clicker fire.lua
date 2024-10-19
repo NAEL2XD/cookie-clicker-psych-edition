@@ -23,8 +23,9 @@ local appData = {
     MineUpgradeMult = 1,
 
     -- settings
-    gameLow = false,
+    flyCookie = false,
     cookieSpawnLimit = 100,
+    flyNumbs = false,
 
     -- upgrades
     rifUnlocked = false,
@@ -76,8 +77,9 @@ local productList = {
 
 local settingsName = {
     -- Name | Val in appData | Description | Type (if int: {min, max, seconds to num})
-    {"Low Detail", "gameLow", "If you do not want a lotta lag, enable this! Disables cookie spawning and text spawning.", "boolean"},
-    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 1000, 0.01}}
+    {"Cookie Popups", "flyCookie", "If true, the cookie will spawn from cookie clicked and on top of game.", "boolean"},
+    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookie spawns you want them to spawn?", "int", {1, 1000, 0.005}},
+    {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
 }
 
 local upgradesList = {
@@ -269,7 +271,7 @@ function onUpdate()
                 setBlendMode("productInfo"..i, "LIGHTEN")
                 setTextString("prodDescription", productList[i][2])
                 if mouseClicked("left") and appData.cookie >= appData[productList[i][1].."Price"] then
-                    playSound("purchase")
+                    playSound("buy"..getRandomInt(1,4))
                     appData.cookie = appData.cookie - appData[productList[i][1].."Price"]
                     appData[productList[i][1].."Own"] = appData[productList[i][1].."Own"]+1
                     appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * productList[i][5])
@@ -310,7 +312,7 @@ function onUpdate()
                 setTextString("prodDescription", upgradesList[i][2].."\nCookie Costs: "..upgradesList[i][5])
                 productHovered = true
                 if mousePressed("left") and appData.cookie >= upgradesList[i][5] and not isClicked then
-                    playSound("purchase")
+                    playSound("buy"..getRandomInt(1,4))
                     appData.cookie = appData.cookie - upgradesList[i][5]
                     upgradeLength = upgradeLength-1
                     appData[upgradesList[i][1].."Bought"] = true
@@ -403,6 +405,8 @@ function onUpdate()
                 setProperty("extrasName"..i..".alpha", 0)
             end
             if extrasState == "settings" then
+                graphicMake("infoThing1", 58, 55, 1169, 90, "FFFFFF")
+                graphicMake("infoThing2", 65, 60, 1155, 80, "000000")
                 setTextString("settingsDesc", settingsName[settingsChosen][3].."\nPress ESCAPE to leave Game Settings and Save your Progress.")
                 if keyboardJustPressed("W") or keyboardJustPressed("Z") or keyboardJustPressed("UP") then
                     settingsChosen = settingsChosen-1
@@ -448,10 +452,12 @@ function onUpdate()
                     end
                 end
             end
-            if keyJustPressed("pause") and not keyboardJustPressed("ENTER") then
+            if (keyJustPressed("pause") and not keyboardJustPressed("ENTER")) or keyboardPressed("BACKSPACE") then
                 extrasState = "menu"
                 timerRan = false
                 removeLuaText("settingsDesc")
+                removeLuaSprite("infoThing1")
+                removeLuaSprite("infoThing2")
                 runTimer("save", 0.01, 1)
                 makeSettings()
                 playSound("cancelMenu")
@@ -641,7 +647,7 @@ function makeUpgrade(id)
 end
 
 function makeExtras(id)
-    graphicMake("extraOutline"..id, 0, -2.5+(80*id), 266, 70, "FFFFFF", true)
+    graphicMake("extraOutline"..id, 0, -3.5+(80*id), 266, 72, "FFFFFF", true)
     graphicMake("extraButton"..id, 0, 0+(80*id), 256, 64, "000000", true)
     makeText("extrasName"..id, 0, 12.5+(80*id), 30)
     setTextString("extrasName"..id, extrasName[id])
@@ -692,10 +698,10 @@ function spawnCookies(isClicked)
     local y = getMouseY("other")
     local opti2 = "smallCookie"..clickCount
     local repeatTimes = (isClicked and 1 or 2)
-    if not appData.gameLow then
-        if repeatTimes == 1 then
-            makeText(opti, x, y, 25)
-        end
+    if repeatTimes == 1 and appData.flyNumbs then
+        makeText(opti, x, y, 25)
+    end
+    if appData.flyCookie then
         for i=repeatTimes,2 do
             if repeatTimes == 2 then
                 opti2 = "smallCookieSky"..clickCount
