@@ -23,9 +23,9 @@ local appData = {
     MineUpgradeMult = 1,
 
     -- settings
-    flyCookie = false,
+    flyCookie = true,
     cookieSpawnLimit = 100,
-    flyNumbs = false,
+    flyNumbs = true,
 
     -- upgrades
     rifUnlocked = false,
@@ -71,8 +71,8 @@ local productList = {
 --   Name | Description | CPS | St. Val | Multi
     {"Cursor",  "Autoclicks once every 10 seconds.",          0.1,    15,  1.15},
     {"Grandma", "A nice grandma to bake more cookies",          1,   100,  1.25},
-    {"Farm",    "Grows cookie plants from cookie seeds.",       8,  1100,  1.05},
-    {"Mine",    "Mines out cookie dough and chocolate chips.", 47, 12000,  1.01}
+    {"Farm",    "Grows cookie plants from cookie seeds.",       8,  1100,   1.1},
+    {"Mine",    "Mines out cookie dough and chocolate chips.", 47, 12000,  1.05}
 }
 
 local settingsName = {
@@ -622,7 +622,7 @@ function makeProduct(id)
     else
         scaleObject("products/"..productList[id][1], 0.7375, 0.7375)
     end
-    makeText(productList[id][1], 1060, 5 + (72 * id), 35)
+    makeText(productList[id][1], 1060, 7.5 + (72 * id), 30)
     makeSprite('smallCookiePrice'..id, 1065, 45 + (72 * id))
     scaleObject("smallCookiePrice"..id, 0.25, 0.25)
     makeText("price"..id, 1085, 42 + (72 * id), 15)
