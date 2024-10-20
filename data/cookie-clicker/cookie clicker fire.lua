@@ -123,11 +123,8 @@ function onCreatePost()
     setTextString("prodDescription", "")
     makeText("Saving", 750, 650, 45)
     setTextString("Saving", "Saving...")
-    if not appData.Watermark then
-        makeText("ccpe", 2, 702, 12)
-        setTextAlignment("ccpe", "left")
-        setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
-    end
+    makeText("ccpe", 2, 702, 12)
+    setTextAlignment("ccpe", "left")
 
     -- Sprites (i should precache them)
     makeSprite("background", 0, 0)
@@ -154,6 +151,7 @@ function onCreatePost()
     setObjectCamera("static", "other")
     screenCenter("static")
     setProperty("static.alpha", 0)
+    setObjectOrder("static", 100000000)
 
     runTimer("cps", 1, 0)
     runTimer("save", 60, 0)
@@ -190,6 +188,11 @@ end
 function onUpdate()
     setTextString("cookieOwn", math.floor(appData.cookie))
     setTextString("cpsOwn", cps.." cookies per second")
+    if appData.watermark then
+        setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
+    else
+        setTextString("ccpe", "")
+    end
 
     if mouseClicked("left") then
         if cookieOverlap then
@@ -476,7 +479,7 @@ function onUpdate()
                 makeText('ver', 0, 600, 35)
                 setTextString("ver", "Your Current Version: "..cookieVer)
                 makeText('source', 0, 550, 25)
-                setTextString("source", "Press ENTER to view latest releases.")
+                setTextString("source", "Press ENTER to view latest releases or Press ESCAPE or BACKSPACE to return.")
                 if keyboardJustPressed("ENTER") then
                     os.execute("start https://github.com/NAEL2XD/cookie-clicker-psych-edition/releases")
                 end
