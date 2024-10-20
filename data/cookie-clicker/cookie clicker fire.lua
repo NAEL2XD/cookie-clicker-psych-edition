@@ -100,7 +100,8 @@ local allGraphic = {}
 local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"}
 local extrasName = {
     "Game Settings",
-    "Restart", -- Use it only for Debugging Purposes
+    "About CCPE",
+    --"Restart", -- Use it only for Debugging Purposes
     "Save & Exit",
 }
 
@@ -169,6 +170,14 @@ function onCreatePost()
     doTweenY("introy", "intro.scale", 200, 3, "easeIn")
     setObjectOrder("extras", 1000000000)
     setObjectOrder("intro", 1000050000)
+    setPropertyFromClass('lime.app.Application', 'current.window.title', "Cookie Clicker Psych Edition (v"..cookieVer..")")
+
+    addHaxeLibrary('Application', 'lime.app')
+    addHaxeLibrary('Image', 'lime.graphics')
+    runHaxeCode([[
+        var Icon:Image=Image.fromFile(Paths.modFolders('images/smallCookie.png'));
+        Application.current.window.setIcon(Icon);
+    ]])
 
     sortUpgrade()
     recalculateCps()
@@ -235,7 +244,7 @@ function onUpdate()
             playSound("menu", 1, "hi2")
             runTimer("camloop", 9, 0)
             setProperty("static.alpha", 1)
-            doTweenAlpha("static", "static", 0.2, 1, "linear")
+            doTweenAlpha("static", "static", 0.35, 1, "linear")
             graphicMake("coolCol", 0, 0, 1280, 720, "000000")
             graphicMake("bar1", 0, 0, 1280, 45, "000000")
             graphicMake("bar2", 0, 0, 45, 1280, "000000")
@@ -396,6 +405,8 @@ function onUpdate()
                         end
                         flushSaveData('CCNael2xdVer')
                         exitSong(true)
+                    elseif hoverName == "About CCPE" then
+                        extrasState = "about"
                     elseif hoverName == "Restart" then
                         restartSong(true)
                     end
@@ -456,12 +467,28 @@ function onUpdate()
                     end
                 end
             end
+            if extrasState == "about" then
+                makeText('info', 0, 75, 50)
+                setTextString("info", "Cookie Clicker: Psych Engine Edition.\nA ported game by Nael2xd.")
+                setTextColor("info", rgbToHex(find))
+                setTextBorder("info", 2, "000000")
+                makeText('ver', 0, 600, 35)
+                setTextString("ver", "Your Current Version: "..cookieVer)
+                makeText('source', 0, 550, 25)
+                setTextString("source", "Press ENTER to view latest releases.")
+                if keyboardJustPressed("ENTER") then
+                    os.execute("start https://github.com/NAEL2XD/cookie-clicker-psych-edition/releases")
+                end
+            end
             if (keyJustPressed("pause") and not keyboardJustPressed("ENTER")) or keyboardPressed("BACKSPACE") then
                 extrasState = "menu"
                 timerRan = false
                 removeLuaText("settingsDesc")
                 removeLuaSprite("infoThing1")
                 removeLuaSprite("infoThing2")
+                removeLuaText("info")
+                removeLuaText("ver")
+                removeLuaText("source")
                 runTimer("save", 0.01, 1)
                 makeSettings()
                 playSound("cancelMenu")
