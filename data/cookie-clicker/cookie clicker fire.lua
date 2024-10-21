@@ -118,7 +118,9 @@ function onCreatePost()
 
     -- Text Stuff
     makeText("cookieOwn", 0, 75, 60)
+    setTextBorder("cookieOwn", 2, "000000")
     makeText("cpsOwn", 0, 145, 20)
+    setTextBorder("cpsOwn", 1, "000000")
     makeText("prodDescription", 0, 10, 25)
     setTextString("prodDescription", "")
     makeText("Saving", 750, 650, 45)
@@ -158,7 +160,7 @@ function onCreatePost()
 
     runTimer("cps", 1, 0)
     runTimer("save", 60, 0)
-    runTimer("goldenCookie", getRandomFloat(60, 300), 1)
+    runTimer("goldenCookie", getRandomFloat(30, 150), 1)
 
     for i=1,#productList do
         if appData.cookie >= productList[i][4] then
@@ -684,6 +686,7 @@ function makeProduct(id)
     setTextAlignment("own"..id, "right")
     setTextAlignment("price"..id, "left")
     setTextAlignment(productList[id][1], "left")
+    setTextBorder(productList[id][1], 1, "000000")
 end
 
 function makeUpgrade(id)
@@ -749,7 +752,8 @@ function spawnCookies(isClicked)
     local opti2 = "smallCookie"..clickCount
     local repeatTimes = (isClicked and 1 or 2)
     if repeatTimes == 1 and appData.flyNumbs then
-        makeText(opti, x, y, 25)
+        makeText(opti, x, y, 30)
+        setTextBorder(opti, 1, "000000")
         setTextString(opti, "+"..appData.cookiePerClick)
         doTweenY("click"..clickCount, opti, getProperty(opti..".y") - 200, 2.5, "linear")
         doTweenAlpha(opti, opti, 0, 2.5, "linear")
@@ -816,7 +820,7 @@ end
 
 function spawnGoldenCookie()
     cancelTimer("goldenCookie")
-    runTimer("goldenCookie", getRandomInt(60, 200), 0)
+    runTimer("goldenCookie", getRandomInt(30, 150), 1)
     makeSprite("goldCookie", getRandomInt(-10, 800), getRandomInt(-10, 650), false)
     setProperty("goldCookie.alpha", 0)
     scaleObject("goldCookie", 0.75, 0.75)
