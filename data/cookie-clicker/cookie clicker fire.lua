@@ -81,7 +81,7 @@ local settingsName = {
     {"Cookie Popups", "flyCookie", "If true, the cookie will spawn from cookie clicked and on top of game.", "boolean"},
     {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookies you want them to spawn on top?", "int", {1, 1000, 0.005}},
     {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
-    {"Watermark", "watermark", "If true, then the watermark will be gone. Requires a restart to take effect.", "boolean"},
+    {"Watermark", "watermark", "If true, then the watermark will be gone.", "boolean"},
 }
 
 local upgradesList = {
@@ -160,7 +160,7 @@ function onCreatePost()
     runTimer("save", 60, 0)
     runTimer("goldenCookie", getRandomFloat(60, 300), 1)
 
-    for i in pairs(productList) do
+    for i=1,#productList do
         if appData.cookie >= productList[i][4] then
             makeProduct(i)
         end
@@ -228,10 +228,10 @@ function onUpdate()
                 removeLuaSprite(allGraphic[i])
                 removeLuaText("extrasName"..i)
             end
-            for k, v in pairs(allGraphic) do
+            for k in pairs(allGraphic) do
                 allGraphic[k] = nil
             end
-            for i in pairs(productList) do
+            for i=1,#productList do
                 setProperty("productInfo"..i..".alpha", 1)
                 setProperty("products/"..productList[i][1]..".alpha", 1)
                 setProperty("smallCookiePrice"..i..".alpha", 1)
@@ -268,7 +268,7 @@ function onUpdate()
             setProperty("ccpe.alpha", 0)
             setProperty("cookieOwn.alpha", 0)
             setProperty("cpsOwn.alpha", 0)
-            for i in pairs(productList) do
+            for i=1,#productList do
                 setProperty("productInfo"..i..".alpha", 0)
                 setProperty("products/"..productList[i][1]..".alpha", 0)
                 setProperty("smallCookiePrice"..i..".alpha", 0)
@@ -287,7 +287,7 @@ function onUpdate()
             spawnGoldenCookie()
         end
         -- Products
-        for i in pairs(productList) do
+        for i=1,#productList do
             setBlendMode("productInfo"..i, "NORMAL")
             if mouseOverlaps("productInfo"..i) then
                 productHovered = true
@@ -300,9 +300,9 @@ function onUpdate()
                     appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * productList[i][5])
                     setTextString("price"..i, math.floor(appData[productList[i][1].."Price"]))
                     setTextString("own"..i, appData[productList[i][1].."Own"])
-                    for ii in pairs(upgradesList) do
+                    for ii=1,#upgradesList do
                         local isUnlocked = true
-                        for iii in pairs(upgradesUnlocked) do
+                        for iii=1,#upgradesUnlocked do
                             if ii == upgradesUnlocked[iii] then
                                 isUnlocked = false
                             end
@@ -323,7 +323,7 @@ function onUpdate()
             end
         end
         -- Upgrades
-        for i in pairs(upgradesList) do
+        for i=1,#upgradesList do
             setBlendMode("upgradeFrame"..i, "NORMAL")
             if appData.cookie >= upgradesList[i][5] then
                 setBlendMode("upgrades/"..upgradesList[i][1], "NORMAL")
@@ -368,7 +368,7 @@ function onUpdate()
                 doTweenX("boing1", "cookie.scale", 0.225, 2, "elasticOut")
                 doTweenY("boing2", "cookie.scale", 0.225, 2, "elasticOut")
                 appData.cookie = appData.cookie + appData.cookiePerClick
-                for i in pairs(productList) do
+                for i=1,#productList do
                     if appData.cookie >= productList[i][4] and not luaTextExists("price"..i) then
                         makeProduct(i)
                         sortUpgrade()
@@ -596,7 +596,7 @@ function onTimerCompleted(tag, loops, loopsLeft)
 end
 
 function onTweenCompleted(tag)
-    for k, v in pairs(listToRemove) do
+    for v in pairs(listToRemove) do
         if stringStartsWith(tag, v) then
             if luaSpriteExists(tag) then
                 removeLuaSprite(tag)
@@ -712,6 +712,7 @@ function makeSettings()
             setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
             setTextBorder("settings"..i, 3, "676767")
             setTextAlignment("settings"..i, "left")
+            setObjectOrder("settings"..i, getObjectOrder("bar6"))
         end
     end
     graphicMake("yea", 0, 0, 1000, 5, "000000")
@@ -727,7 +728,7 @@ function sortUpgrade()
         upgradesUnlocked[i] = nil
     end
     upgradeLength = 0
-    for i in pairs(upgradesList) do
+    for i=1,#upgradesList do
         if (appData[upgradesList[i][4][1].."Own"] >= upgradesList[i][4][2]) and (appData[upgradesList[i][1].."Unlocked"] and not appData[upgradesList[i][1].."Bought"]) then
             makeUpgrade(i)
             table.insert(upgradesUnlocked, i)
