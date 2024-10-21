@@ -99,10 +99,10 @@ local upgradesUnlocked = {}
 local allGraphic = {}
 local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"}
 local extrasName = {
-    "Game Settings",
-    "About CCPE",
-    --"Restart", -- Use it only for Debugging Purposes
-    "Save & Exit",
+    {"Game Settings", "Configure Game Settings Here."},
+    {"About CCPE", "About Cookie Clicker: Psych Engine Edition"},
+    {"Restart", "This is ONLY for debugging purposes"}, -- Use it only for Debugging Purposes
+    {"Save & Exit", "Saves Progress and Exits PlayState."},
 }
 
 function onCreatePost()
@@ -123,8 +123,11 @@ function onCreatePost()
     setTextString("prodDescription", "")
     makeText("Saving", 750, 650, 45)
     setTextString("Saving", "Saving...")
+    setTextBorder("Saving", 1, "000000")
     makeText("ccpe", 2, 702, 12)
     setTextAlignment("ccpe", "left")
+    makeText("menuAbout", 0, 0, 34)
+    setTextString("menuAbout", "")
 
     -- Sprites (i should precache them)
     makeSprite("background", 0, 0)
@@ -249,6 +252,10 @@ function onUpdate()
             setProperty("static.alpha", 1)
             doTweenAlpha("staticShit", "static", 0.35, 1, "linear")
             graphicMake("coolCol", 0, 0, 1280, 720, "000000")
+            graphicMake("bar5", 0, 0, 1280, 50, "FFFFFF")
+            graphicMake("bar6", 0, 0, 50, 1280, "FFFFFF")
+            graphicMake("bar7", 1235, 0, 50, 1280, "FFFFFF")
+            graphicMake("bar8", 0, 670, 1280, 50, "FFFFFF")
             graphicMake("bar1", 0, 0, 1280, 45, "000000")
             graphicMake("bar2", 0, 0, 45, 1280, "000000")
             graphicMake("bar3", 1240, 0, 45, 1280, "000000")
@@ -388,15 +395,22 @@ function onUpdate()
             table.insert(find, math.floor(getProperty("move"..i..".x")))
         end
         graphicMake("coolCol", 0, 0, 1280, 720, rgbToHex(find))
-        setObjectOrder("coolCol", getObjectOrder("bar1"))
+        setObjectOrder("coolCol", getObjectOrder("bar5"))
 
         -- Le Menu Items
         if extrasState == "menu" then
             doTweenY("no no", "extras", 625, 0.25, "linear")
+            local isHoveredOnSomething = false
             for i=1,#extrasName do
                 setProperty("extraOutline"..i..".alpha", 1)
                 setProperty("extraButton"..i..".alpha", 1)
                 setProperty("extrasName"..i..".alpha", 1)
+                if mouseOverlaps("extraButton"..i) then
+                    isHoveredOnSomething = true
+                    setTextString("menuAbout", extrasName[i][2])
+                elseif not isHoveredOnSomething then
+                    setTextString("menuAbout", "")
+                end
                 if mouseOverlaps("extraButton"..i) and mouseClicked("left") then
                     local hoverName = getTextString("extrasName"..i)
                     if hoverName == "Game Settings" then
@@ -418,6 +432,7 @@ function onUpdate()
             end
         else
             doTweenY("no no", "extras", 750, 0.1, "linear")
+            setTextString("menuAbout", "")
             for i=1,#extrasName do
                 setProperty("extraOutline"..i..".alpha", 0)
                 setProperty("extraButton"..i..".alpha", 0)
@@ -485,6 +500,9 @@ function onUpdate()
                 end
             end
             if (keyJustPressed("pause") and not keyboardJustPressed("ENTER")) or keyboardPressed("BACKSPACE") then
+                if extrasState == "settings" then
+                    runTimer("save", 0.01, 1)
+                end
                 extrasState = "menu"
                 timerRan = false
                 removeLuaText("settingsDesc")
@@ -493,7 +511,6 @@ function onUpdate()
                 removeLuaText("info")
                 removeLuaText("ver")
                 removeLuaText("source")
-                runTimer("save", 0.01, 1)
                 makeSettings()
                 playSound("cancelMenu")
             end
@@ -682,10 +699,10 @@ function makeUpgrade(id)
 end
 
 function makeExtras(id)
-    graphicMake("extraOutline"..id, 0, -3.5+(80*id), 266, 72, "FFFFFF", true)
-    graphicMake("extraButton"..id, 0, 0+(80*id), 256, 64, "000000", true)
-    makeText("extrasName"..id, 0, 12.5+(80*id), 30)
-    setTextString("extrasName"..id, extrasName[id])
+    graphicMake("extraOutline"..id, 0, -21+(80*id), 266, 72, "FFFFFF", true)
+    graphicMake("extraButton"..id, 0, -16.5+(80*id), 256, 64, "000000", true)
+    makeText("extrasName"..id, 0, -5+(80*id), 30)
+    setTextString("extrasName"..id, extrasName[id][1])
 end
 
 function makeSettings()
