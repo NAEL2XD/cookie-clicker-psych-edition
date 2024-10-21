@@ -100,9 +100,9 @@ local allGraphic = {}
 local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"}
 local extrasName = {
     {"Game Settings", "Configure Game Settings Here."},
-    {"About CCPE", "About Cookie Clicker: Psych Engine Edition"},
-    {"Restart", "This is ONLY for debugging purposes"}, -- Use it only for Debugging Purposes
-    {"Save & Exit", "Saves Progress and Exits PlayState."},
+    {"About CCPE",    "About Cookie Clicker: Psych Engine Edition."},
+    {"Restart",       "This is ONLY for debugging purposes."},
+    {"Save & Exit",   "Saves Progress and Exits PlayState."},
 }
 
 function onCreatePost()
@@ -396,6 +396,7 @@ function onUpdate()
         end
         graphicMake("coolCol", 0, 0, 1280, 720, rgbToHex(find))
         setObjectOrder("coolCol", getObjectOrder("bar5"))
+        setTextBorder("menuAbout", 2, rgbToHex(find))
 
         -- Le Menu Items
         if extrasState == "menu" then
@@ -464,12 +465,7 @@ function onUpdate()
                             timerRan = false
                             cancelTimer("settingsScroll")
                             if keyJustPressed("accept") then
-                                local isTrue = appData[settingsName[i][2]]
-                                if isTrue then
-                                    appData[settingsName[i][2]] = false
-                                else
-                                    appData[settingsName[i][2]] = true
-                                end
+                                appData[settingsName[i][2]] = not appData[settingsName[i][2]]
                                 playSound("confirmMenu")
                                 setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
                             end
