@@ -1,6 +1,7 @@
 -- "Why would you put cookie clicker in da fnf" - zamination_1
 
-local debugger = true
+-- If you are a dev and want to debug stuff, set "debugger" to true
+local debugger = false
 
 local appData = {
     -- main game
@@ -33,6 +34,7 @@ local appData = {
     cookieSpawnLimit = 100,
     flyNumbs = true,
     watermark = true,
+    autoSave = true,
 
     -- upgrades
     rifUnlocked = false,
@@ -89,9 +91,10 @@ local productList = {
 local settingsName = {
     -- Name | Val in appData | Description | Type (if int: {min, max, seconds to num})
     {"Cookie Popups", "flyCookie", "If true, the cookie will spawn from cookie clicked and on top of game.", "boolean"},
-    {"Cookie Spawn Limit", "cookieSpawnLimit", "How much cookies you want them to spawn on top?", "int", {1, 1000, 0.005}},
+    {"Sky Cookie Spawn Limit", "cookieSpawnLimit", "How much cookies you want them to spawn on top?", "int", {1, 1000, 0.005}},
     {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
     {"Watermark", "watermark", "If true, then the watermark will be gone.", "boolean"},
+    {"Auto Saving", "autoSave", "If false, Auto Save won't do anything. Kinda used for performance increase?.", "boolean"},
 }
 
 local upgradesList = {
@@ -103,7 +106,7 @@ local upgradesList = {
     {"prpn",         "Grandmas are twice as efficient.",              2, {"Grandma",  5},     5000},
     {"ld",           "Grandmas are twice as efficient.",              2, {"Grandma", 25},    50000},
     {"ch",           "Farms are twice as efficient.",                 3, {"Farm",     1},    11000},
-    {"scb",          "Factories are twice as efficient.",             4, {"Factory",  1}, 1300000}
+    {"scb",          "Factories are twice as efficient.",             4, {"Factory",  1},  1300000}
 }
 
 local upgradesUnlocked = {}
@@ -122,6 +125,11 @@ function onCreatePost()
     end]]
 
     if debugger then
+        makeText("deb", 0, 0, 60)
+        screenCenter("deb")
+        setProperty("deb.alpha", 0.4)
+        setTextString("deb", "Debug Mode")
+        setObjectOrder("deb", 123456789)
         table.insert(extrasName, {"Restart", "This is ONLY for debugging purposes."})
         makeText("debugText", 0, 0, 16)
         setTextAlignment("debugText", "right")
@@ -250,12 +258,13 @@ function onUpdate()
             setProperty("ccpe.alpha", 1)
             setProperty("cookieOwn.alpha", 1)
             setProperty("cpsOwn.alpha", 1)
-            for i=1,#allGraphic do
+            for i=#allGraphic,1,-1 do
                 removeLuaSprite(allGraphic[i])
+                removeLuaSprite("extraOutline"..i)
+                removeLuaSprite("extraButton"..i)
+                removeLuaSprite("extrasName"..i)
                 removeLuaText("extrasName"..i)
-            end
-            for k in pairs(allGraphic) do
-                allGraphic[k] = nil
+                allGraphic[i] = nil
             end
             for i=1,#productList do
                 setProperty("productInfo"..i..".alpha", 1)
@@ -264,11 +273,6 @@ function onUpdate()
                 setProperty("price"..i..".alpha", 1)
                 setProperty("own"..i..".alpha", 1)
                 setProperty(productList[i][1]..".alpha", 1)
-            end
-            for i=1,#extrasName do
-                removeLuaSprite("extraOutline"..i)
-                removeLuaSprite("extraButton"..i)
-                removeLuaSprite("extrasName"..i)
             end
         else
             insideExtras = true
@@ -489,14 +493,19 @@ function onUpdate()
                 end
                 for i=1,#settingsName do
                     if i == settingsChosen then
-                        setTextBorder("settings"..i, 3, "456789")
+                        setTextBorder("settings"..i, 3, "000000")
                         if settingsName[i][4] == "boolean" then
                             timerRan = false
                             cancelTimer("settingsScroll")
                             if keyJustPressed("accept") then
                                 appData[settingsName[i][2]] = not appData[settingsName[i][2]]
                                 playSound("confirmMenu")
-                                setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
+                                local textToApply = appData[settingsName[i][2]]
+                                local type = settingsName[i][4]
+                                if type == "boolean" then
+                                    textToApply = (appData[settingsName[i][2]] and "ON" or "OFF")
+                                end
+                                setTextString("settings"..i, settingsName[i][1]..": "..textToApply)
                             end
                         end
                         if settingsName[i][4] == "int" then
@@ -559,7 +568,7 @@ function onTimerCompleted(tag, loops, loopsLeft)
         end
         appData.cookie = appData.cookie+cps
     end
-    if stringStartsWith(tag, "save") then
+    if stringStartsWith(tag, "save") and appData.autoSave then
         if stringEndsWith(tag, "Back") then
             doTweenX("save1", "Saving", 750, 0.75, "cubeIn")
             doTweenX("save2", "loading", 1485, 0.75, "cubeIn")
@@ -742,8 +751,13 @@ function makeSettings()
         end
         removeLuaText("settings"..i)
         if not (extrasState == "menu") then
+            local textToApply = appData[settingsName[i][2]]
+            local type = settingsName[i][4]
+            if type == "boolean" then
+                textToApply = (appData[settingsName[i][2]] and "ON" or "OFF")
+            end
             makeText("settings"..i, 175+(20*(i-settingsChosen)), 320+(60*(i-settingsChosen)), 50)
-            setTextString("settings"..i, settingsName[i][1]..": "..tostring(appData[settingsName[i][2]]))
+            setTextString("settings"..i, settingsName[i][1]..": "..textToApply)
             setTextBorder("settings"..i, 3, "676767")
             setTextAlignment("settings"..i, "left")
             setObjectOrder("settings"..i, getObjectOrder("bar6"))
@@ -774,14 +788,14 @@ function sortUpgrade()
     end
 end
 
-function spawnCookies(isClicked)
+function spawnCookies(clicked)
     -- complex shit? yeah i made it complex.
     clickCount = clickCount+1
     local opti = 'cookieClicked'..clickCount
     local x = getMouseX("other") - 635
     local y = getMouseY("other")
     local opti2 = "smallCookie"..clickCount
-    local repeatTimes = (isClicked and 1 or 2)
+    local repeatTimes = (clicked and 1 or 2)
     if repeatTimes == 1 and appData.flyNumbs then
         makeText(opti, x, y, 30)
         setTextBorder(opti, 1, "000000")
@@ -846,7 +860,7 @@ function getGoldenCookieReward(rew)
     doTweenY("Lucky!2", "glowin", y-145, 2.5, "cubeOut")
     doTweenAlpha("glowin", "glowin", 0, 5, "cubeOut")
     if rew == 1 then
-        local reward = math.floor(cps*getRandomFloat(25, 200))
+        local reward = math.floor((cps+1)*getRandomFloat(25, 200))
         setTextString("luck", "Lucky!\n+"..reward.." cookies.")
         appData.cookie = appData.cookie + reward
     end
