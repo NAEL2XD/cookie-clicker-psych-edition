@@ -1,5 +1,7 @@
 -- "Why would you put cookie clicker in da fnf" - zamination_1
 
+local debugger = true
+
 local appData = {
     -- main game
     cookie = 0,
@@ -21,6 +23,10 @@ local appData = {
     MineOwn = 0,
     MinePrice = 12000,
     MineUpgradeMult = 1,
+
+    FactoryOwn = 0,
+    FactoryPrice = 130000,
+    FactoryUpgradeMult = 1,
 
     -- settings
     flyCookie = true,
@@ -48,7 +54,10 @@ local appData = {
     ldBought = false,
 
     chUnlocked = false,
-    chBought = false
+    chBought = false,
+
+    scbUnlocked = false,
+    scbBought = false
 }
 
 -- Game Data (no save)
@@ -70,10 +79,11 @@ local scrollFast = 0
 
 local productList = {
 --   Name | Description | CPS | St. Val | Multi
-    {"Cursor",  "Autoclicks once every 10 seconds.",          0.1,    15,  1.15},
-    {"Grandma", "A nice grandma to bake more cookies",          1,   100,  1.25},
-    {"Farm",    "Grows cookie plants from cookie seeds.",       8,  1100,   1.1},
-    {"Mine",    "Mines out cookie dough and chocolate chips.", 47, 12000,  1.05}
+    {"Cursor",  "Autoclicks once every 10 seconds.",           0.1,     15, 1.15},
+    {"Grandma", "A nice grandma to bake more cookies",           1,    100, 1.25},
+    {"Farm",    "Grows cookie plants from cookie seeds.",        8,   1100,  1.1},
+    {"Mine",    "Mines out cookie dough and chocolate chips.",  47,  12000, 1.05},
+    {"Factory", "Produces large quantities of cookies.",       260, 130000, 1.05}
 }
 
 local settingsName = {
@@ -92,7 +102,8 @@ local upgradesList = {
     {"frg",          "Grandmas are twice as efficient.",              2, {"Grandma",  1},     1000},
     {"prpn",         "Grandmas are twice as efficient.",              2, {"Grandma",  5},     5000},
     {"ld",           "Grandmas are twice as efficient.",              2, {"Grandma", 25},    50000},
-    {"ch",           "Farms are twice as efficient.",                 3, {"Farm",     1},    11000}
+    {"ch",           "Farms are twice as efficient.",                 3, {"Farm",     1},    11000},
+    {"scb",          "Factories are twice as efficient.",             4, {"Factory",  1}, 1300000}
 }
 
 local upgradesUnlocked = {}
@@ -101,14 +112,20 @@ local listToRemove = {"cookie", "smallCookie", "click", "intro", "cookieClicked"
 local extrasName = {
     {"Game Settings", "Configure Game Settings Here."},
     {"About CCPE",    "About Cookie Clicker: Psych Engine Edition."},
-    {"Restart",       "This is ONLY for debugging purposes."},
     {"Save & Exit",   "Saves Progress and Exits PlayState."},
 }
 
 function onCreatePost()
-    initSaveData('CCNael2xdVer')
+    --[[initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CCNael2xdVer', k, v)
+    end]]
+
+    if debugger then
+        table.insert(extrasName, {"Restart", "This is ONLY for debugging purposes."})
+        makeText("debugText", 0, 0, 16)
+        setTextAlignment("debugText", "right")
+        setProperty("debugText.y", 0)
     end
 
     setProperty("camGame.alpha", 0)
@@ -193,6 +210,7 @@ end
 function onUpdate()
     setTextString("cookieOwn", math.floor(appData.cookie))
     setTextString("cpsOwn", cps.." cookies per second")
+
     if appData.watermark then
         setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
     else
@@ -210,6 +228,12 @@ function onUpdate()
     if productHovered then
         productHovered = false
         runTimer("prodBye", 0, 1)
+    end
+
+    if debugger then
+        -- If you wanna debug with a value or list, do so here
+        setTextString("debugText", allGraphic)
+        setObjectOrder("debugText", 1000000000)
     end
 
     if mouseOverlaps("extras") and mouseClicked("left") then
@@ -253,7 +277,6 @@ function onUpdate()
             runTimer("camloop", 9, 0)
             setProperty("static.alpha", 1)
             doTweenAlpha("staticShit", "static", 0.35, 1, "linear")
-            graphicMake("coolCol", 0, 0, 1280, 720, "000000")
             graphicMake("bar5", 0, 0, 1280, 50, "FFFFFF")
             graphicMake("bar6", 0, 0, 50, 1280, "FFFFFF")
             graphicMake("bar7", 1235, 0, 50, 1280, "FFFFFF")
@@ -262,6 +285,10 @@ function onUpdate()
             graphicMake("bar2", 0, 0, 45, 1280, "000000")
             graphicMake("bar3", 1240, 0, 45, 1280, "000000")
             graphicMake("bar4", 0, 675, 1280, 45, "000000")
+            local add = {"infoThing1", "infoThing2", "coolCol", "yea"}
+            for i=1,#add do
+                table.insert(allGraphic, add[i])
+            end
             for i=1,3 do
                 graphicMake("move"..i, 0, 0, 0, 0, "000000")
             end
@@ -640,13 +667,15 @@ function makeSprite(name, x, y, isFront)
 end
 
 function graphicMake(name, x, y, width, height, color, center)
+    if not (stringStartsWith(name, "infoThing") or name == "coolCol" or name == "yea") then
+        table.insert(allGraphic, name)
+    end
     makeLuaSprite(name, "", 0, 0)
     makeGraphic(name, width, height, color)
     addLuaSprite(name)
     setObjectCamera(name, "other")
     setProperty(name..".x", x)
     setProperty(name..".y", y)
-    table.insert(allGraphic, name)
     if center then
         screenCenter(name)
         setProperty(name..".y", y)
@@ -667,6 +696,7 @@ function makeProduct(id)
     makeSprite("productInfo"..id, 1000, 0 + (72 * id))
     scaleObject("productInfo"..id, 0.75, 0.75)
     makeSprite("products/"..productList[id][1], 1004, 3 + (72 * id))
+    setProperty("products/"..productList[id][1]..".antialiasing", false)
     if productList[id][1] == "Cursor" then
         scaleObject("products/"..productList[id][1], 0.675, 0.675)
     else
@@ -695,6 +725,7 @@ function makeUpgrade(id)
     makeSprite("upgradeFrame"..id, -60 + (61*upgradeLength), 0)
     scaleObject("upgradeFrame"..id, 0.5, 0.5)
     makeSprite("upgrades/"..upgradesList[id][1], -55 + (61*upgradeLength), 7.5)
+    setProperty("upgrades/"..upgradesList[id][1]..".antialiasing", false)
 end
 
 function makeExtras(id)
@@ -793,6 +824,9 @@ function recalculateCps(name)
     end
     if name == 3 then
         appData.FarmUpgradeMult = appData.FarmUpgradeMult*2
+    end
+    if name == 4 then
+        appData.FactoryUpgradeMult = appData.FactoryUpgradeMult*2
     end
     cps = appData.CursorOwn/10 * appData.CursorUpgradeMult
     for i=2,#productList do
