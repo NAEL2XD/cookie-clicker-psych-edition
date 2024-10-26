@@ -35,6 +35,7 @@ local appData = {
     flyNumbs = true,
     watermark = true,
     autoSave = true,
+    jingleLeave = false,
 
     -- upgrades
     rifUnlocked = false,
@@ -64,7 +65,7 @@ local appData = {
 
 -- Game Data (no save)
 local cps = 0
-local cookieVer = "0.4.0"
+local cookieVer = "0.5.0"
 
 -- non list
 local clickCount = 0
@@ -78,6 +79,7 @@ local timerRan = false
 local settingsChosen = 1
 local extrasState = "menu"
 local scrollFast = 0
+local isLeaving = false
 
 local productList = {
 --   Name | Description | CPS | St. Val | Multi
@@ -95,6 +97,7 @@ local settingsName = {
     {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
     {"Watermark", "watermark", "If true, then the watermark will be gone.", "boolean"},
     {"Auto Saving", "autoSave", "If false, Auto Save won't do anything. Kinda used for performance increase?.", "boolean"},
+    {"Jingle If Save & Exit Pressed", "jingleLeave", "If ON, you'll hear a jingle if you press Save & Exit.", "boolean"},
 }
 
 local upgradesList = {
@@ -119,10 +122,10 @@ local extrasName = {
 }
 
 function onCreatePost()
-    --[[initSaveData('CCNael2xdVer')
+    initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CCNael2xdVer', k, v)
-    end]]
+    end
 
     if debugger then
         makeText("deb", 0, 0, 60)
@@ -141,6 +144,22 @@ function onCreatePost()
     setPropertyFromClass("ClientPrefs", "hideHud", true)
     setPropertyFromClass('flixel.FlxG', 'mouse.visible', true)
 
+    -- Sprites (i should precache them)
+    makeSprite("background", 0, 0)
+    scaleObject("background", 1.25, 0.775)
+    makeSprite("glowBlack", 0, 365)
+    scaleObject("glowBlack", 1.35, 1)
+    makeSprite("cookie", 0, 0)
+    scaleObject("cookie", 0.2, 0.2)
+    screenCenter("cookie")
+    makeSprite("extras", 0, 0)
+    scaleObject("extras", 0.33, 0.33)
+    screenCenter("extras")
+    setProperty("extras.y", 625)
+    makeSprite('coolbg', 0, 685, true)
+    scaleObject("coolbg", 0.5375, 0.5)
+    setProperty("coolbg.angle", 180)
+
     -- Text Stuff
     makeText("cookieOwn", 0, 75, 60)
     setTextBorder("cookieOwn", 2, "000000")
@@ -155,19 +174,6 @@ function onCreatePost()
     setTextAlignment("ccpe", "left")
     makeText("menuAbout", 0, 0, 34)
     setTextString("menuAbout", "")
-
-    -- Sprites (i should precache them)
-    makeSprite("background", 0, 0)
-    scaleObject("background", 1.25, 0.775)
-    makeSprite("glowBlack", 0, 365)
-    scaleObject("glowBlack", 1.35, 1)
-    makeSprite("cookie", 0, 0)
-    scaleObject("cookie", 0.2, 0.2)
-    screenCenter("cookie")
-    makeSprite("extras", 0, 0)
-    scaleObject("extras", 0.33, 0.33)
-    screenCenter("extras")
-    setProperty("extras.y", 625)
 
     makeAnimatedLuaSprite("loading", "loading", 1485, 640)
     addAnimationByPrefix("loading", "loading", "loading", 12, true)
@@ -221,8 +227,10 @@ function onUpdate()
 
     if appData.watermark then
         setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
+        setProperty("coolbg.alpha", 1)
     else
         setTextString("ccpe", "")
+        setProperty("coolbg.alpha", 0)
     end
 
     if mouseClicked("left") then
@@ -240,12 +248,12 @@ function onUpdate()
 
     if debugger then
         -- If you wanna debug with a value or list, do so here
-        setTextString("debugText", allGraphic)
+        setTextString("debugText", upgradesUnlocked)
         setObjectOrder("debugText", 1000000000)
     end
 
     if mouseOverlaps("extras") and mouseClicked("left") then
-        if insideExtras then
+        if insideExtras and not isLeaving then
             insideExtras = false
             extrasState = "menu"
             stopSound("hi1")
@@ -255,7 +263,6 @@ function onUpdate()
             cancelTimer("colorChange")
             setProperty("static.alpha", 1)
             doTweenAlpha("staticShit", "static", 0, 0.33, "linear")
-            setProperty("ccpe.alpha", 1)
             setProperty("cookieOwn.alpha", 1)
             setProperty("cpsOwn.alpha", 1)
             for i=#allGraphic,1,-1 do
@@ -274,7 +281,7 @@ function onUpdate()
                 setProperty("own"..i..".alpha", 1)
                 setProperty(productList[i][1]..".alpha", 1)
             end
-        else
+        elseif not isLeaving then
             insideExtras = true
             playSound("camloop", 2, "hi1")
             playSound("menu", 1, "hi2")
@@ -298,7 +305,6 @@ function onUpdate()
             end
             runTimer("colorChangebegin", 0, 1)
             runTimer("colorChange", 2, 0)
-            setProperty("ccpe.alpha", 0)
             setProperty("cookieOwn.alpha", 0)
             setProperty("cpsOwn.alpha", 0)
             for i=1,#productList do
@@ -374,14 +380,6 @@ function onUpdate()
                     appData[upgradesList[i][1].."Bought"] = true
                     removeLuaSprite("upgradeFrame"..i)
                     removeLuaSprite("upgrades/"..upgradesList[i][1])
-                    local exists = 0
-                    for ii=1,#upgradesList do
-                        if luaSpriteExists("upgradeFrame"..ii) then
-                            exists = exists+1
-                            setProperty("upgradeFrame"..ii..".x", -60 + (60*exists))
-                            setProperty("upgrades/"..upgradesList[ii][1]..".x", -55 + (60*exists))
-                        end
-                    end
                     sortUpgrade()
                     recalculateCps(upgradesList[i][3])
                 end
@@ -447,20 +445,35 @@ function onUpdate()
                 end
                 if mouseOverlaps("extraButton"..i) and mouseClicked("left") then
                     local hoverName = getTextString("extrasName"..i)
-                    if hoverName == "Game Settings" then
-                        extrasState = "settings"
-                        makeSettings()
-                        makeText('settingsDesc', 0, 65, 25)
-                    elseif hoverName == "Save & Exit" then
-                        for k, v in pairs(appData) do
-                            setDataFromSave('CCNael2xdVer', k, v)
+                    if not isLeaving then
+                        if hoverName == "Game Settings" then
+                            extrasState = "settings"
+                            makeSettings()
+                            makeText('settingsDesc', 0, 65, 25)
+                        elseif hoverName == "Save & Exit" then
+                            for k, v in pairs(appData) do
+                                setDataFromSave('CCNael2xdVer', k, v)
+                            end
+                            flushSaveData('CCNael2xdVer')
+                            if appData.jingleLeave then
+                                graphicMake("bye", 0, 0, 2000, 2000, "000000", true)
+                                setProperty("bye.alpha", 0)
+                                setObjectOrder("bye", 2147000000)
+                                doTweenAlpha("bye", "bye", 1, 3.35, "linear")
+                                cancelTimer("camloop")
+                                playSound("leave")
+                                stopSound("hi1")
+                                stopSound("hi2")
+                                runTimer("quitGame", 8.5)
+                                isLeaving = true
+                            else
+                                exitSong(true)
+                            end
+                        elseif hoverName == "About CCPE" then
+                            extrasState = "about"
+                        elseif hoverName == "Restart" then
+                            restartSong(true)
                         end
-                        flushSaveData('CCNael2xdVer')
-                        exitSong(true)
-                    elseif hoverName == "About CCPE" then
-                        extrasState = "about"
-                    elseif hoverName == "Restart" then
-                        restartSong(true)
                     end
                 end
             end
@@ -631,6 +644,9 @@ function onTimerCompleted(tag, loops, loopsLeft)
     if tag == "byeGC" then
         removeLuaSprite("goldCookie")
     end
+    if tag == "quitGame" then
+        exitSong(true)
+    end
 end
 
 function onTweenCompleted(tag)
@@ -749,18 +765,25 @@ function makeSettings()
         if settingsName[i][4] == "int" then
             appData[settingsName[i][2]] = math.floor(appData[settingsName[i][2]])
         end
-        removeLuaText("settings"..i)
         if not (extrasState == "menu") then
             local textToApply = appData[settingsName[i][2]]
             local type = settingsName[i][4]
+            local xy = {175+(20*(i-settingsChosen)), 320+(60*(i-settingsChosen))}
             if type == "boolean" then
                 textToApply = (appData[settingsName[i][2]] and "ON" or "OFF")
             end
-            makeText("settings"..i, 175+(20*(i-settingsChosen)), 320+(60*(i-settingsChosen)), 50)
+            if not luaTextExists("settings"..i) then
+                makeText("settings"..i, xy[1], xy[2], 50)
+                setTextBorder("settings"..i, 3, "676767")
+                setTextAlignment("settings"..i, "left")
+                setObjectOrder("settings"..i, getObjectOrder("bar6"))
+            else
+                setProperty("settings"..i..".x", xy[1])
+                setProperty("settings"..i..".y", xy[2])
+            end
             setTextString("settings"..i, settingsName[i][1]..": "..textToApply)
-            setTextBorder("settings"..i, 3, "676767")
-            setTextAlignment("settings"..i, "left")
-            setObjectOrder("settings"..i, getObjectOrder("bar6"))
+        else
+            removeLuaText("settings"..i)
         end
     end
     graphicMake("yea", 0, 0, 1000, 5, "000000")
@@ -780,10 +803,8 @@ function sortUpgrade()
         if (appData[upgradesList[i][4][1].."Own"] >= upgradesList[i][4][2]) and (appData[upgradesList[i][1].."Unlocked"] and not appData[upgradesList[i][1].."Bought"]) then
             makeUpgrade(i)
             table.insert(upgradesUnlocked, i)
-        else
-            if appData[upgradesList[i][1].."Bought"] then
-                table.insert(upgradesUnlocked, i)
-            end
+        elseif appData[upgradesList[i][1].."Bought"] then
+            table.insert(upgradesUnlocked, i)
         end
     end
 end
