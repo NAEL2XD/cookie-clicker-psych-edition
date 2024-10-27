@@ -80,18 +80,19 @@ local settingsChosen = 1
 local extrasState = "menu"
 local scrollFast = 0
 local isLeaving = false
+local coolState = "Cookie Clicker: Psych Engine Edition (v"..cookieVer..")"
 
 local productList = {
---   Name | Description | CPS | St. Val | Multi
-    {"Cursor",  "Autoclicks once every 10 seconds.",           0.1,     15, 1.15},
-    {"Grandma", "A nice grandma to bake more cookies",           1,    100, 1.25},
-    {"Farm",    "Grows cookie plants from cookie seeds.",        8,   1100,  1.1},
-    {"Mine",    "Mines out cookie dough and chocolate chips.",  47,  12000, 1.05},
-    {"Factory", "Produces large quantities of cookies.",       260, 130000, 1.05}
+--   Name | Description | CPS | St. Val
+    {"Cursor",  "Autoclicks once every 10 seconds.",           0.1,     15},
+    {"Grandma", "A nice grandma to bake more cookies",           1,    100},
+    {"Farm",    "Grows cookie plants from cookie seeds.",        8,   1100},
+    {"Mine",    "Mines out cookie dough and chocolate chips.",  47,  12000},
+    {"Factory", "Produces large quantities of cookies.",       260, 130000}
 }
 
 local settingsName = {
-    -- Name | Val in appData | Description | Type (if int: {min, max, seconds to num})
+    -- Name | Val in appData | Description | Type ({min:int, max:int, seconds to num:float})
     {"Cookie Popups", "flyCookie", "If true, the cookie will spawn from cookie clicked and on top of game.", "boolean"},
     {"Sky Cookie Spawn Limit", "cookieSpawnLimit", "How much cookies you want them to spawn on top?", "int", {1, 1000, 0.005}},
     {"Number Popups", "flyNumbs", "If true, the number will spawn only from cookie clicked.", "boolean"},
@@ -122,10 +123,10 @@ local extrasName = {
 }
 
 function onCreatePost()
-    initSaveData('CCNael2xdVer')
+    --[[initSaveData('CCNael2xdVer')
     for k, v in pairs(appData) do
         appData[k] = getDataFromSave('CCNael2xdVer', k, v)
-    end
+    end]]
 
     if debugger then
         makeText("deb", 0, 0, 60)
@@ -224,6 +225,10 @@ end
 function onUpdate()
     setTextString("cookieOwn", math.floor(appData.cookie))
     setTextString("cpsOwn", cps.." cookies per second")
+
+    if not insideExtras then
+        changePresence(coolState, "Cookies: "..appData.cookie.." | In Game") -- just found out using changeDiscordPresence fucks shit up
+    end
 
     if appData.watermark then
         setTextString("ccpe", "Cookie Clicker Psych Edition (v"..cookieVer..")")
@@ -336,7 +341,7 @@ function onUpdate()
                     playSound("buy"..getRandomInt(1,4))
                     appData.cookie = appData.cookie - appData[productList[i][1].."Price"]
                     appData[productList[i][1].."Own"] = appData[productList[i][1].."Own"]+1
-                    appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * productList[i][5])
+                    appData[productList[i][1].."Price"] = math.floor(appData[productList[i][1].."Price"] * 1.025)
                     setTextString("price"..i, math.floor(appData[productList[i][1].."Price"]))
                     setTextString("own"..i, appData[productList[i][1].."Own"])
                     for ii=1,#upgradesList do
@@ -431,6 +436,7 @@ function onUpdate()
 
         -- Le Menu Items
         if extrasState == "menu" then
+            changePresence(coolState, "Cookies: "..appData.cookie.." | In Extras Menu")
             doTweenY("no no", "extras", 625, 0.25, "linear")
             local isHoveredOnSomething = false
             for i=1,#extrasName do
@@ -486,6 +492,7 @@ function onUpdate()
                 setProperty("extrasName"..i..".alpha", 0)
             end
             if extrasState == "settings" then
+                changePresence(coolState, "Cookies: "..appData.cookie.." | In Game Settings")
                 graphicMake("infoThing1", 59, 55, 1167, 90, "FFFFFF")
                 graphicMake("infoThing2", 65, 60, 1155, 80, "000000")
                 setTextString("settingsDesc", settingsName[settingsChosen][3].."\nPress ESCAPE to leave Game Settings and Save your Progress.")
@@ -534,6 +541,7 @@ function onUpdate()
                 end
             end
             if extrasState == "about" then
+                changePresence(coolState, "Cookies: "..appData.cookie.." | In About Game")
                 makeText('info', 0, 75, 50)
                 setTextString("info", "Cookie Clicker: Psych Engine Edition.\nA ported game by Nael2xd.")
                 setTextColor("info", rgbToHex(find))
