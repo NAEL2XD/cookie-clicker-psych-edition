@@ -1,6 +1,6 @@
 ## cokie clikr! psych edition
 
-tested on js engine
+tested on js engine and star engine
 
 # FAQs
 
